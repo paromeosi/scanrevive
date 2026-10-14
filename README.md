@@ -51,9 +51,20 @@ Your browser opens **http://localhost:8110**. Then:
 2. Drag on the preview to choose the area. Pick the resolution and file format.
 3. Press **Scan**. Files are saved in `~/Pictures/ScanRevive`.
 
-Next time, double-click **`ScanRevive.command`** in the `ScanRevive` folder in your home folder, or run the last command again. Press `Ctrl+C` in Terminal to stop.
-
 > The first scan after switching on takes about 15 seconds while the lamp warms up and the scanner calibrates. Later scans are faster.
+
+## Everyday use
+
+| To… | Do this |
+|---|---|
+| **Start ScanRevive** | Double-click **`ScanRevive.command`** in the `ScanRevive` folder in your home folder. A Terminal window opens and the page appears in your browser. Keep the Terminal window open while you scan. |
+| **Scan one page** | Put it face down on the glass, press **Preview**, drag a box around it, choose the file format and press **Scan**. It appears under **Scans**. Click it to open it. |
+| **Make a PDF of several pages** | Scan each page, using JPEG for small files. Under **Scans**, tick the pages in order, then press **Combine … into PDF**. |
+| **Scan without touching the computer** | Press a [button on the scanner](#scanner-buttons). |
+| **Find your files** | Press **Open folder**, or in Finder go to **Pictures → ScanRevive**. |
+| **Stop ScanRevive** | Close the Terminal window. |
+
+**Which resolution?** 300 dpi suits documents, 600 dpi suits photos, and 1200 dpi or more suits small originals such as stamps or slides. Higher resolutions are slower and make bigger files.
 
 ## Supported scanners
 
