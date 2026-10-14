@@ -1,5 +1,10 @@
 # ScanRevive
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-black?logo=apple)
+![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)
+![Dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen)
+
 **Keep your Canon LiDE 110, and many other scanners, working on modern macOS, including Apple Silicon (M1–M5).**
 
 Canon no longer ships drivers for many perfectly good scanners, so they stop working after a macOS update and often end up as e-waste.
@@ -29,7 +34,10 @@ ScanRevive brings them back with a simple web page that runs on your own Mac. Yo
 
 ## Quick start
 
-Open **Terminal** and run:
+If you don't have Homebrew yet, install it first by following the one-line instructions on [brew.sh](https://brew.sh).
+At the end of its installation, Homebrew prints a few **Next steps** commands. Run them, or the `brew` command won't be found.
+
+Then open **Terminal** and run:
 
 ```bash
 brew install sane-backends
@@ -89,9 +97,12 @@ python3 scanrevive.py [--port 8110] [--host 127.0.0.1] [--out ~/Pictures/ScanRev
 
 ## Start automatically at login
 
-Save this as `~/Library/LaunchAgents/io.github.scanrevive.plist`. If you cloned somewhere else, change the path.
+ScanRevive can run in the background from the moment you log in. The scanner buttons then always work, and the page is always at http://localhost:8110.
+Paste this into Terminal. It assumes you cloned into `~/ScanRevive` as in the Quick start.
 
-```xml
+```bash
+mkdir -p ~/Library/LaunchAgents
+cat > ~/Library/LaunchAgents/io.github.scanrevive.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -100,22 +111,23 @@ Save this as `~/Library/LaunchAgents/io.github.scanrevive.plist`. If you cloned 
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/python3</string>
-    <string>/Users/YOUR-MAC-USER/ScanRevive/scanrevive.py</string>
+    <string>$HOME/ScanRevive/scanrevive.py</string>
     <string>--no-browser</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
 </dict>
 </plist>
-```
-
-Then load it:
-
-```bash
+EOF
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/io.github.scanrevive.plist
 ```
 
-To stop it, run `launchctl bootout gui/$(id -u)/io.github.scanrevive`.
+To turn it off again:
+
+```bash
+launchctl bootout gui/$(id -u)/io.github.scanrevive
+rm ~/Library/LaunchAgents/io.github.scanrevive.plist
+```
 
 ## Scan from your phone or another computer
 
@@ -131,12 +143,45 @@ Then open `http://<your-mac-name>.local:8110` on any device in the same network.
 
 | Problem | Fix |
 |---|---|
+| `brew: command not found` | Run the **Next steps** commands that Homebrew printed at the end of its installation, then open a new Terminal window. |
+| macOS asks to install "command line developer tools" | Click **Install**. This provides `python3` and `git`. |
 | "No scanner found" | Check the cable, then run `scanimage -L`. The LiDE is powered over USB, so plug it straight into the Mac or into a powered hub. |
 | "Error during device I/O" | Unplug the scanner and plug it back in. ScanRevive reconnects within a few seconds. |
 | "The scanner is busy" | Another program, or a second ScanRevive window started from Terminal, is using it. Close that program. |
 | Stripes or odd colors | Tick **Show advanced options**, then press **Clear calibration cache** or **Force calibration**. |
 | Port 8110 already in use | Start with `--port 8111`. |
 | JPEG, TIFF or PDF fail on Linux | The conversions use `sips`, which is built into macOS. On Linux, use PNG. |
+
+## Update and uninstall
+
+To update to the latest version:
+
+```bash
+git -C ~/ScanRevive pull
+```
+
+To uninstall, first turn off the [login item](#start-automatically-at-login) if you set it up. Then run:
+
+```bash
+rm -rf ~/ScanRevive
+brew uninstall sane-backends
+```
+
+Your scans stay in `~/Pictures/ScanRevive` until you delete them.
+
+## FAQ
+
+**Will the scanner show up in Image Capture, Preview or Photoshop?**
+No. ScanRevive is its own small app that runs in your browser. Your scans are ordinary files, so you can open them in any program.
+
+**Does it upload my documents anywhere?**
+No. Nothing leaves your Mac. The page is served by your own computer, and by default no other device can open it.
+
+**Does it cost anything?**
+No. ScanRevive is free and open source under the MIT license.
+
+**Windows?**
+ScanRevive is made for macOS. On Linux the scanning engine and PNG output work. Windows is not supported.
 
 ## How it works
 
@@ -161,6 +206,11 @@ Contributions are welcome, especially:
 - Bug fixes. Please keep the project free of dependencies: Python standard library only.
 
 Before sending a change, run `python3 scanrevive.py --selftest`.
+
+## Credits
+
+All the hard work of talking to the hardware is done by the [SANE project](http://www.sane-project.org/), especially its `genesys` driver.
+The SANE developers reverse-engineered these scanners and have kept them alive for over two decades. Thank you.
 
 ## License
 
