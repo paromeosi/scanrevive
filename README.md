@@ -51,7 +51,7 @@ Next time, double-click **`ScanRevive.command`** in the `ScanRevive` folder in y
 
 | Scanner | Status |
 |---|---|
-| Canon CanoScan LiDE 110 | ✅ Tested on macOS 27, Apple M4: preview, crop, all formats, 16-bit, multi-page PDF |
+| Canon CanoScan LiDE 110 | ✅ Tested on macOS 27, Apple M4: preview, crop, all formats, 16-bit, multi-page PDF, SCAN/PDF/E-MAIL buttons |
 | Other Canon LiDE models (35, 60, 100, 120, 200, 210, 220, …) | Should work: same SANE `genesys` driver |
 | Any scanner [supported by SANE](http://www.sane-project.org/sane-supported-devices.html) | Should work: the interface adapts to each scanner's options |
 
