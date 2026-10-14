@@ -75,7 +75,7 @@ Your browser opens **http://localhost:8110**. Then:
 | Any scanner [supported by SANE](http://www.sane-project.org/sane-supported-devices.html) | Should work: the interface adapts to each scanner's options |
 
 Not sure about yours? With the scanner plugged in, run `scanimage -L`. If it lists your scanner, ScanRevive can use it.
-Please [open an issue](../../issues) to report whether your model works, so this table can grow.
+Please report whether your model works with the **[scanner report form](../../issues/new?template=scanner-report.yml)**. It takes two minutes, needs no programming, and you can write in any language.
 
 ## Scanner buttons
 
@@ -212,7 +212,7 @@ What was missing on modern macOS was an easy way to use it. ScanRevive talks to 
 
 Contributions are welcome, especially:
 
-- **Reports for other scanner models**, working or not. Include the output of `scanimage -L`.
+- **Reports for other scanner models**, working or not, through the [scanner report form](../../issues/new?template=scanner-report.yml).
 - **Translations** of this README.
 - Bug fixes. Please keep the project free of dependencies: Python standard library only.
 

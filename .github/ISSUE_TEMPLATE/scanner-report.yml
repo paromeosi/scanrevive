@@ -1,0 +1,65 @@
+name: Scanner report
+description: Tell us whether ScanRevive works with your scanner. No programming needed.
+title: "[Scanner] "
+labels: ["scanner report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping other people keep their scanners alive! 🙌
+        Every report, even "it doesn't work", helps. **You can write in any language.**
+
+  - type: input
+    id: model
+    attributes:
+      label: Scanner model
+      description: Usually printed on the scanner lid or on the label underneath.
+      placeholder: Canon CanoScan LiDE 220
+    validations:
+      required: true
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Yes, everything I tried works
+        - Partly (please explain below)
+        - No
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tested
+    attributes:
+      label: What worked?
+      description: Tick everything that worked for you.
+      options:
+        - label: The scanner is found (green dot at the top right of the page)
+        - label: Preview
+        - label: Scan
+        - label: PDF / multi-page PDF
+        - label: The buttons on the scanner
+
+  - type: input
+    id: mac
+    attributes:
+      label: Mac
+      description: Apple menu → About This Mac.
+      placeholder: MacBook Air M2, macOS 26.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: scanimage
+    attributes:
+      label: Output of `scanimage -L`
+      description: Plug in the scanner, open Terminal, type `scanimage -L`, press Enter, and paste what it prints.
+      placeholder: "device `genesys:libusb:001:002' is a Canon LiDE 220 flatbed scanner"
+      render: text
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: What didn't work, error messages you saw, or tips for other owners of this model. Screenshots are welcome.
