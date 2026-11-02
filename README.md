@@ -1,3 +1,5 @@
+<img src="assets/icon-classic.png" width="120" align="right" alt="">
+
 # ScanRevive
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -20,6 +22,7 @@ ScanRevive brings them back with a simple web page that runs on your own Mac. Yo
 - **All scanner settings**: color or gray, 75 to 4800 dpi, 8 or 16-bit, brightness, contrast, gamma, lamp timer, calibration. The controls are built from what the scanner reports, so nothing is hidden.
 - **PNG, JPEG, TIFF and PDF** output. PDFs keep the real paper size, so an A4 page stays A4.
 - **Multi-page PDF**: choose **Multi-page PDF**, scan the pages one by one from the page or with the scanner's SCAN button, then press **Finish PDF**. You can also combine scans and PDFs you already have into one document.
+- **A real Mac app**: ScanRevive sits in your Applications folder and Dock with its own icon. It runs quietly in the background, so there is no Terminal window to keep open.
 - **The scanner's own buttons work** (LiDE 110: COPY, SCAN, PDF, E-MAIL). See [Scanner buttons](#scanner-buttons).
 - **Robust**: reconnects by itself when the scanner is unplugged or changes USB address, retries once after a USB hiccup, and a scan is never lost when a conversion fails.
 - **Private**: everything stays on your computer. There is no telemetry and no cloud. By default only your own Mac can open the page.
@@ -42,14 +45,16 @@ Then open **Terminal** and run:
 ```bash
 brew install sane-backends
 git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-python3 ~/ScanRevive/scanrevive.py
+python3 ~/ScanRevive/scanrevive.py --install
 ```
 
-Your browser opens **http://localhost:8110**. Then:
+**ScanRevive** is now in your **Applications** folder, with its own icon, and your browser opens **http://localhost:8110**. Then:
 
 1. Press **Preview** to see the glass.
 2. Drag on the preview to choose the area. Pick the resolution and file format.
 3. Press **Scan**. Files are saved in `~/Pictures/ScanRevive`.
+
+From now on, open ScanRevive like any other app: from Applications, Launchpad or Spotlight, or drag it to the Dock. There is no Terminal window to keep open.
 
 > The first scan after switching on takes about 15 seconds while the lamp warms up and the scanner calibrates. Later scans are faster.
 
@@ -57,13 +62,13 @@ Your browser opens **http://localhost:8110**. Then:
 
 | To… | Do this |
 |---|---|
-| **Start ScanRevive** | Double-click **`ScanRevive.command`** in the `ScanRevive` folder in your home folder. A Terminal window opens and the page appears in your browser. Keep the Terminal window open while you scan. |
+| **Open ScanRevive** | Click **ScanRevive** in the Dock, or find it in Applications, Launchpad or Spotlight. The page opens in your browser. |
 | **Scan one page** | Put it face down on the glass, press **Preview**, drag a box around it, choose the file format and press **Scan**. It appears under **Scans**. Click it to open it. |
 | **Make a PDF of several pages** | Under **Save as**, choose **Multi-page PDF**. Press **Scan page 1**, put the next page on the glass, press **Scan page 2**, and so on. The SCAN button on the scanner works too. At the end press **Finish PDF**. If a page comes out wrong, press **Remove last** and scan it again. |
 | **Combine scans you already have** | Under **Your scans**, tick the round box on each one in page order. A number shows each page's position. Then press **Combine into one PDF**. |
 | **Scan without touching the computer** | Press a [button on the scanner](#scanner-buttons). |
 | **Find your files** | Press **Open folder**, or in Finder go to **Pictures → ScanRevive**. |
-| **Stop ScanRevive** | Close the Terminal window. |
+| **Close ScanRevive** | Just close the browser tab. ScanRevive keeps waiting in the background, using almost no energy, so the scanner buttons always work. |
 
 **Which resolution?** 300 dpi suits documents, 600 dpi suits photos, and 1200 dpi or more suits small originals such as stamps or slides. Higher resolutions are slower and make bigger files.
 
@@ -80,7 +85,7 @@ Please report whether your model works with the **[scanner report form](../../is
 
 ## Scanner buttons
 
-While ScanRevive is running, the buttons on the scanner work:
+The buttons on the scanner work at any time, even with the page closed:
 
 | Button | What it does |
 |---|---|
@@ -88,8 +93,6 @@ While ScanRevive is running, the buttons on the scanner work:
 | **PDF** | Scans to a PDF |
 | **E-MAIL** | Scans to JPEG and opens a new Mail message with the file attached |
 | **COPY** | Scans and prints on your default printer, like a photocopier |
-
-To have the buttons always ready, [start ScanRevive automatically at login](#start-automatically-at-login).
 
 ## Command-line options
 
@@ -105,46 +108,26 @@ python3 scanrevive.py [--port 8110] [--host 127.0.0.1] [--out ~/Pictures/ScanRev
 | `--out` | Folder where scans are saved |
 | `--device` | Pick a scanner by part of its name, when several are connected |
 | `--no-browser` | Don't open the browser on start |
+| `--install` | Add ScanRevive to Applications and run it in the background from login, with the other options given (macOS) |
+| `--uninstall` | Remove what `--install` added. Your scans are kept |
 | `--selftest` | Check the image and PDF code without a scanner, then exit |
 
-## Start automatically at login
+## The ScanRevive app
 
-ScanRevive can run in the background from the moment you log in. The scanner buttons then always work, and the page is always at http://localhost:8110.
-Paste this into Terminal. It assumes you cloned into `~/ScanRevive` as in the Quick start.
+`--install` does three things:
 
-```bash
-mkdir -p ~/Library/LaunchAgents
-cat > ~/Library/LaunchAgents/io.github.scanrevive.plist <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>io.github.scanrevive</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/usr/bin/python3</string>
-    <string>$HOME/ScanRevive/scanrevive.py</string>
-    <string>--no-browser</string>
-  </array>
-  <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
-</dict>
-</plist>
-EOF
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/io.github.scanrevive.plist
-```
+- It adds **ScanRevive.app** to your Applications folder. The app simply opens the page in your browser.
+- It adds a **login item**, so ScanRevive runs in the background from the moment you log in and the scanner buttons always work. macOS shows a notification about a new background item. You can see it in **System Settings → General → Login Items & Extensions**.
+- It remembers the options you add, for example `--install --out ~/Pictures/Scans`.
 
-To turn it off again:
+Messages and errors from the background copy go to `~/Library/Logs/ScanRevive.log`.
 
-```bash
-launchctl bootout gui/$(id -u)/io.github.scanrevive
-rm ~/Library/LaunchAgents/io.github.scanrevive.plist
-```
+To try ScanRevive without installing anything, run `python3 ~/ScanRevive/scanrevive.py`. It then works until you close the Terminal window.
 
 ## Scan from your phone or another computer
 
 ```bash
-python3 ~/ScanRevive/scanrevive.py --host 0.0.0.0
+python3 ~/ScanRevive/scanrevive.py --install --host 0.0.0.0
 ```
 
 Then open `http://<your-mac-name>.local:8110` on any device in the same network.
@@ -159,9 +142,11 @@ Then open `http://<your-mac-name>.local:8110` on any device in the same network.
 | macOS asks to install "command line developer tools" | Click **Install**. This provides `python3` and `git`. |
 | "No scanner found" | Check the cable, then run `scanimage -L`. The LiDE is powered over USB, so plug it straight into the Mac or into a powered hub. |
 | "Error during device I/O" | Unplug the scanner and plug it back in. ScanRevive reconnects within a few seconds. |
-| "The scanner is busy" | Another program, or a second ScanRevive window started from Terminal, is using it. Close that program. |
+| "The scanner is busy" | Another program is using it. Close that program. |
+| ScanRevive.app opens a page that doesn't load | Run the `--install` command again. If it still fails, look in `~/Library/Logs/ScanRevive.log`. |
+| `--install` says the folder is closed to background programs | macOS doesn't let programs running in the background read Desktop, Documents or Downloads. Keep the `ScanRevive` folder in your home folder, as in the Quick start. |
 | Stripes or odd colors | Open **More settings**, tick **Show expert options**, then press **Clear calibration cache** or **Force calibration**. |
-| Port 8110 already in use | Start with `--port 8111`. |
+| Port 8110 already in use | Install with `--install --port 8111`. |
 | JPEG, TIFF or PDF fail on Linux | The conversions use `sips`, which is built into macOS. On Linux, use PNG. |
 
 ## Update and uninstall
@@ -169,12 +154,13 @@ Then open `http://<your-mac-name>.local:8110` on any device in the same network.
 To update to the latest version:
 
 ```bash
-git -C ~/ScanRevive pull
+git -C ~/ScanRevive pull && python3 ~/ScanRevive/scanrevive.py --install
 ```
 
-To uninstall, first turn off the [login item](#start-automatically-at-login) if you set it up. Then run:
+To uninstall:
 
 ```bash
+python3 ~/ScanRevive/scanrevive.py --uninstall
 rm -rf ~/ScanRevive
 brew uninstall sane-backends
 ```
@@ -207,6 +193,7 @@ What was missing on modern macOS was an easy way to use it. ScanRevive talks to 
 - It keeps the scanner open between scans. The LiDE 110 changes its USB address after every close, which confuses other front-ends.
 - It streams the scan straight into a PNG file, so big scans don't fill your memory.
 - It uses macOS's built-in `sips` for JPEG and TIFF and writes PDFs itself.
+- `--install` adds a small app that opens the page and a login item (a launchd agent) that keeps the server running in the background.
 - It rejects requests from other websites, both cross-site and DNS rebinding, so web pages cannot scan or read your documents.
 
 ## Contributing
@@ -242,12 +229,12 @@ Canon, CanoScan and LiDE are trademarks of Canon Inc. This project is not affili
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
-2. Il browser si apre su http://localhost:8110: premi **Preview**, trascina per scegliere l'area e premi **Scan**. Le scansioni vengono salvate in `~/Pictures/ScanRevive` (Immagini).
-3. Le volte successive basta un doppio clic su `ScanRevive.command`, nella cartella `ScanRevive` della tua cartella Inizio.
+2. Il browser si apre su http://localhost:8110: premi **Anteprima**, trascina per scegliere l'area e premi **Scansiona**. Le scansioni vengono salvate in `~/Pictures/ScanRevive` (Immagini).
+3. Da quel momento ScanRevive è tra le **Applicazioni**: aprilo come qualsiasi altra app (o trascinalo nel Dock). Non serve tenere aperto il Terminale.
 
-I tasti dello scanner (COPY, SCAN, PDF, E-MAIL) funzionano mentre ScanRevive è aperto.
+I tasti dello scanner (COPY, SCAN, PDF, E-MAIL) funzionano sempre, perché ScanRevive resta pronto in background.
 </details>
 
 <details>
@@ -259,12 +246,12 @@ I tasti dello scanner (COPY, SCAN, PDF, E-MAIL) funzionano mentre ScanRevive è 
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. El navegador se abre en http://localhost:8110: pulsa **Preview**, arrastra para elegir el área y pulsa **Scan**. Los escaneos se guardan en `~/Pictures/ScanRevive` (Imágenes).
-3. Las próximas veces basta con hacer doble clic en `ScanRevive.command`, dentro de la carpeta `ScanRevive` de tu carpeta de inicio.
+3. A partir de ahí, ScanRevive está en **Aplicaciones**: ábrelo como cualquier otra app (o arrástralo al Dock). No hace falta dejar el Terminal abierto.
 
-Los botones del escáner (COPY, SCAN, PDF, E-MAIL) funcionan mientras ScanRevive está abierto.
+Los botones del escáner (COPY, SCAN, PDF, E-MAIL) funcionan siempre, porque ScanRevive espera en segundo plano.
 </details>
 
 <details>
@@ -276,12 +263,12 @@ Los botones del escáner (COPY, SCAN, PDF, E-MAIL) funcionan mientras ScanRevive
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Le navigateur s'ouvre sur http://localhost:8110 : cliquez sur **Preview**, faites glisser pour choisir la zone, puis cliquez sur **Scan**. Les numérisations sont enregistrées dans `~/Pictures/ScanRevive` (Images).
-3. Les fois suivantes, double-cliquez simplement sur `ScanRevive.command`, dans le dossier `ScanRevive` de votre dossier personnel.
+3. Ensuite, ScanRevive se trouve dans **Applications** : ouvrez-le comme n'importe quelle app (ou glissez-le dans le Dock). Inutile de garder le Terminal ouvert.
 
-Les boutons du scanner (COPY, SCAN, PDF, E-MAIL) fonctionnent tant que ScanRevive est ouvert.
+Les boutons du scanner (COPY, SCAN, PDF, E-MAIL) fonctionnent toujours, car ScanRevive attend discrètement en arrière-plan.
 </details>
 
 <details>
@@ -293,12 +280,12 @@ Les boutons du scanner (COPY, SCAN, PDF, E-MAIL) fonctionnent tant que ScanReviv
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Der Browser öffnet http://localhost:8110: Klicke auf **Preview**, ziehe einen Rahmen um den gewünschten Bereich und klicke auf **Scan**. Die Scans landen in `~/Pictures/ScanRevive` (Bilder).
-3. Beim nächsten Mal genügt ein Doppelklick auf `ScanRevive.command` im Ordner `ScanRevive` in deinem Benutzerordner.
+3. Danach findest du ScanRevive unter **Programme**: Öffne es wie jede andere App (oder zieh es ins Dock). Das Terminal muss nicht geöffnet bleiben.
 
-Die Tasten am Scanner (COPY, SCAN, PDF, E-MAIL) funktionieren, solange ScanRevive läuft.
+Die Tasten am Scanner (COPY, SCAN, PDF, E-MAIL) funktionieren immer, denn ScanRevive wartet unauffällig im Hintergrund.
 </details>
 
 <details>
@@ -310,12 +297,12 @@ Die Tasten am Scanner (COPY, SCAN, PDF, E-MAIL) funktionieren, solange ScanReviv
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. O navegador abre em http://localhost:8110: clique em **Preview**, arraste para escolher a área e clique em **Scan**. As digitalizações são salvas em `~/Pictures/ScanRevive` (Imagens).
-3. Nas próximas vezes, basta clicar duas vezes em `ScanRevive.command`, na pasta `ScanRevive` da sua pasta pessoal.
+3. A partir daí, o ScanRevive fica em **Aplicativos**: abra-o como qualquer outro app (ou arraste-o para o Dock). Não é preciso deixar o Terminal aberto.
 
-Os botões do scanner (COPY, SCAN, PDF, E-MAIL) funcionam enquanto o ScanRevive estiver aberto.
+Os botões do scanner (COPY, SCAN, PDF, E-MAIL) funcionam sempre, porque o ScanRevive fica aguardando em segundo plano.
 </details>
 
 <details>
@@ -327,12 +314,12 @@ Os botões do scanner (COPY, SCAN, PDF, E-MAIL) funcionam enquanto o ScanRevive 
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. De browser opent http://localhost:8110: klik op **Preview**, sleep om het gebied te kiezen en klik op **Scan**. Scans worden opgeslagen in `~/Pictures/ScanRevive` (Afbeeldingen).
-3. De volgende keer dubbelklik je gewoon op `ScanRevive.command` in de map `ScanRevive` in je thuismap.
+3. Daarna staat ScanRevive bij **Programma's**: open het zoals elke andere app (of sleep het naar het Dock). Terminal hoeft niet open te blijven.
 
-De knoppen op de scanner (COPY, SCAN, PDF, E-MAIL) werken zolang ScanRevive draait.
+De knoppen op de scanner (COPY, SCAN, PDF, E-MAIL) werken altijd, want ScanRevive wacht stil op de achtergrond.
 </details>
 
 <details>
@@ -344,12 +331,12 @@ De knoppen op de scanner (COPY, SCAN, PDF, E-MAIL) werken zolang ScanRevive draa
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Przeglądarka otworzy http://localhost:8110: kliknij **Preview**, przeciągnij, aby zaznaczyć obszar, i kliknij **Scan**. Skany są zapisywane w `~/Pictures/ScanRevive` (Obrazki).
-3. Następnym razem wystarczy dwukrotnie kliknąć `ScanRevive.command` w folderze `ScanRevive` w Twoim folderze domowym.
+3. Od tej pory ScanRevive jest w folderze **Aplikacje**: otwieraj go jak każdą inną aplikację (albo przeciągnij do Docka). Terminal nie musi być otwarty.
 
-Przyciski na skanerze (COPY, SCAN, PDF, E-MAIL) działają, dopóki ScanRevive jest uruchomiony.
+Przyciski na skanerze (COPY, SCAN, PDF, E-MAIL) działają zawsze, bo ScanRevive czeka po cichu w tle.
 </details>
 
 <details>
@@ -361,12 +348,12 @@ Przyciski na skanerze (COPY, SCAN, PDF, E-MAIL) działają, dopóki ScanRevive j
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. В браузере откроется http://localhost:8110: нажмите **Preview**, выделите нужную область мышью и нажмите **Scan**. Сканы сохраняются в `~/Pictures/ScanRevive` (Изображения).
-3. В следующий раз просто дважды щёлкните `ScanRevive.command` в папке `ScanRevive` вашей домашней папки.
+3. После этого ScanRevive появится в папке **Программы**: открывайте его как любое другое приложение (или перетащите в Dock). Держать Терминал открытым не нужно.
 
-Кнопки на сканере (COPY, SCAN, PDF, E-MAIL) работают, пока запущен ScanRevive.
+Кнопки на сканере (COPY, SCAN, PDF, E-MAIL) работают всегда: ScanRevive незаметно ждёт в фоновом режиме.
 </details>
 
 <details>
@@ -378,12 +365,12 @@ Przyciski na skanerze (COPY, SCAN, PDF, E-MAIL) działają, dopóki ScanRevive j
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. У браузері відкриється http://localhost:8110: натисніть **Preview**, виділіть потрібну область мишею і натисніть **Scan**. Скани зберігаються в `~/Pictures/ScanRevive` (Зображення).
-3. Наступного разу просто двічі клацніть `ScanRevive.command` у папці `ScanRevive` вашої домашньої папки.
+3. Після цього ScanRevive з'явиться в папці **Програми**: відкривайте його як будь-яку іншу програму (або перетягніть у Dock). Тримати Термінал відкритим не потрібно.
 
-Кнопки на сканері (COPY, SCAN, PDF, E-MAIL) працюють, поки запущено ScanRevive.
+Кнопки на сканері (COPY, SCAN, PDF, E-MAIL) працюють завжди: ScanRevive непомітно чекає у фоновому режимі.
 </details>
 
 <details>
@@ -395,12 +382,12 @@ Przyciski na skanerze (COPY, SCAN, PDF, E-MAIL) działają, dopóki ScanRevive j
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Web tarayıcınızda http://localhost:8110 açılır: **Preview** düğmesine basın, alanı sürükleyerek seçin ve **Scan** düğmesine basın. Taramalar `~/Pictures/ScanRevive` (Resimler) klasörüne kaydedilir.
-3. Sonraki seferlerde ana klasörünüzdeki `ScanRevive` klasöründe bulunan `ScanRevive.command` dosyasına çift tıklamanız yeterlidir.
+3. Bundan sonra ScanRevive **Uygulamalar** klasöründedir: diğer uygulamalar gibi açın (ya da Dock'a sürükleyin). Terminal'i açık tutmanıza gerek yoktur.
 
-Tarayıcının üzerindeki düğmeler (COPY, SCAN, PDF, E-MAIL), ScanRevive açık olduğu sürece çalışır.
+Tarayıcının üzerindeki düğmeler (COPY, SCAN, PDF, E-MAIL) her zaman çalışır, çünkü ScanRevive arka planda sessizce bekler.
 </details>
 
 <details>
@@ -416,15 +403,15 @@ Tarayıcının üzerindeki düğmeler (COPY, SCAN, PDF, E-MAIL), ScanRevive aç�
 ```bash
 brew install sane-backends
 git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-python3 ~/ScanRevive/scanrevive.py
+python3 ~/ScanRevive/scanrevive.py --install
 ```
 
 <div dir="rtl">
 
 2. سيفتح المتصفح الصفحة http://localhost:8110: اضغط **Preview**، واسحب لتحديد المنطقة، ثم اضغط **Scan**. تُحفظ الملفات في `~/Pictures/ScanRevive` (الصور).
-3. في المرات التالية يكفي النقر المزدوج على `ScanRevive.command` داخل مجلد `ScanRevive` في مجلد المستخدم.
+3. بعد ذلك ستجد ScanRevive في مجلد **التطبيقات**: افتحه مثل أي تطبيق آخر (أو اسحبه إلى Dock). لا حاجة لإبقاء Terminal مفتوحًا.
 
-تعمل أزرار الماسح (COPY وSCAN وPDF وE-MAIL) ما دام ScanRevive قيد التشغيل.
+تعمل أزرار الماسح (COPY وSCAN وPDF وE-MAIL) دائمًا، لأن ScanRevive ينتظر بهدوء في الخلفية.
 
 </div>
 </details>
@@ -438,12 +425,12 @@ python3 ~/ScanRevive/scanrevive.py
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. ब्राउज़र में http://localhost:8110 खुलेगा: **Preview** दबाएँ, माउस से क्षेत्र चुनें और **Scan** दबाएँ। स्कैन `~/Pictures/ScanRevive` में सेव होते हैं।
-3. अगली बार बस होम फ़ोल्डर के `ScanRevive` फ़ोल्डर में `ScanRevive.command` पर डबल-क्लिक करें।
+3. इसके बाद ScanRevive **Applications** फ़ोल्डर में मिलेगा: इसे किसी भी दूसरे ऐप की तरह खोलें (या Dock में खींच लें)। Terminal खुला रखने की ज़रूरत नहीं।
 
-स्कैनर के बटन (COPY, SCAN, PDF, E-MAIL) तब तक काम करते हैं जब तक ScanRevive चल रहा है।
+स्कैनर के बटन (COPY, SCAN, PDF, E-MAIL) हमेशा काम करते हैं, क्योंकि ScanRevive बैकग्राउंड में चुपचाप तैयार रहता है।
 </details>
 
 <details>
@@ -455,12 +442,12 @@ python3 ~/ScanRevive/scanrevive.py
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. 浏览器会打开 http://localhost:8110：点击 **Preview**，拖动鼠标选择区域，再点击 **Scan**。扫描文件保存在 `~/Pictures/ScanRevive`（图片）中。
-3. 以后只需双击个人文件夹中 `ScanRevive` 文件夹里的 `ScanRevive.command` 即可。
+3. 之后 ScanRevive 会出现在 **应用程序** 中：像其他 App 一样打开即可（也可以拖到程序坞）。无需保持终端窗口打开。
 
-只要 ScanRevive 正在运行，扫描仪上的按键（COPY、SCAN、PDF、E-MAIL）就可以使用。
+扫描仪上的按键（COPY、SCAN、PDF、E-MAIL）随时可用，因为 ScanRevive 会在后台安静待命。
 </details>
 
 <details>
@@ -472,12 +459,12 @@ python3 ~/ScanRevive/scanrevive.py
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. ブラウザーで http://localhost:8110 が開きます。**Preview** を押し、ドラッグして範囲を選び、**Scan** を押してください。スキャンしたファイルは `~/Pictures/ScanRevive`（ピクチャ）に保存されます。
-3. 次回からは、ホームフォルダーの `ScanRevive` フォルダーにある `ScanRevive.command` をダブルクリックするだけです。
+3. 以後、ScanRevive は **アプリケーション** フォルダーにあります。ほかのアプリと同じように開いてください（Dock にドラッグしておくと便利です）。ターミナルを開いたままにする必要はありません。
 
-ScanRevive の起動中は、スキャナー本体のボタン（COPY、SCAN、PDF、E-MAIL）も使えます。
+ScanRevive はバックグラウンドで待機しているので、スキャナー本体のボタン（COPY、SCAN、PDF、E-MAIL）はいつでも使えます。
 </details>
 
 <details>
@@ -489,12 +476,12 @@ ScanRevive の起動中は、スキャナー本体のボタン（COPY、SCAN、P
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. 브라우저에서 http://localhost:8110이 열리면 **Preview**를 누르고, 드래그해서 영역을 선택한 뒤 **Scan**을 누르세요. 스캔 파일은 `~/Pictures/ScanRevive`(사진)에 저장됩니다.
-3. 다음부터는 홈 폴더의 `ScanRevive` 폴더에 있는 `ScanRevive.command`를 더블클릭하기만 하면 됩니다.
+3. 이후에는 **응용 프로그램** 폴더에 있는 ScanRevive를 다른 앱처럼 열면 됩니다(Dock으로 드래그해 두어도 좋습니다). 터미널을 열어 둘 필요는 없습니다.
 
-ScanRevive가 실행 중이면 스캐너의 버튼(COPY, SCAN, PDF, E-MAIL)도 사용할 수 있습니다.
+ScanRevive가 백그라운드에서 조용히 대기하므로 스캐너의 버튼(COPY, SCAN, PDF, E-MAIL)은 언제나 사용할 수 있습니다.
 </details>
 
 <details>
@@ -506,12 +493,12 @@ ScanRevive가 실행 중이면 스캐너의 버튼(COPY, SCAN, PDF, E-MAIL)도 �
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Peramban akan membuka http://localhost:8110: tekan **Preview**, seret untuk memilih area, lalu tekan **Scan**. Hasil pindaian disimpan di `~/Pictures/ScanRevive` (Gambar).
-3. Selanjutnya cukup klik dua kali `ScanRevive.command` di folder `ScanRevive` pada folder rumah Anda.
+3. Setelah itu ScanRevive ada di folder **Aplikasi**: buka seperti app lainnya (atau seret ke Dock). Terminal tidak perlu dibiarkan terbuka.
 
-Tombol pada pemindai (COPY, SCAN, PDF, E-MAIL) berfungsi selama ScanRevive berjalan.
+Tombol pada pemindai (COPY, SCAN, PDF, E-MAIL) selalu berfungsi, karena ScanRevive menunggu diam-diam di latar belakang.
 </details>
 
 <details>
@@ -523,10 +510,10 @@ Tombol pada pemindai (COPY, SCAN, PDF, E-MAIL) berfungsi selama ScanRevive berja
    ```bash
    brew install sane-backends
    git clone https://github.com/paromeosi/scanrevive.git ~/ScanRevive
-   python3 ~/ScanRevive/scanrevive.py
+   python3 ~/ScanRevive/scanrevive.py --install
    ```
 2. Trình duyệt sẽ mở http://localhost:8110: nhấn **Preview**, kéo chuột để chọn vùng cần quét rồi nhấn **Scan**. Bản quét được lưu trong `~/Pictures/ScanRevive` (Hình ảnh).
-3. Những lần sau, chỉ cần nhấp đúp vào `ScanRevive.command` trong thư mục `ScanRevive` ở thư mục người dùng của bạn.
+3. Từ đó trở đi, ScanRevive nằm trong thư mục **Ứng dụng**: mở nó như mọi ứng dụng khác (hoặc kéo vào Dock). Không cần để Terminal mở.
 
-Các nút trên máy quét (COPY, SCAN, PDF, E-MAIL) hoạt động khi ScanRevive đang chạy.
+Các nút trên máy quét (COPY, SCAN, PDF, E-MAIL) luôn hoạt động, vì ScanRevive lặng lẽ chờ sẵn ở chế độ nền.
 </details>

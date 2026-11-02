@@ -4,21 +4,29 @@
 It talks to libsane directly through ctypes, so the only requirement is SANE itself:
     brew install sane-backends
     python3 scanrevive.py            # then open http://localhost:8110
+    python3 scanrevive.py --install  # macOS: add ScanRevive to Applications and keep it running in the background
 """
 import argparse
 import array
 import ctypes
 import ctypes.util
+import errno
 import json
 import mimetypes
+import os
+import platform
+import plistlib
 import re
+import shlex
 import shutil
+import signal
 import struct
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.request
 import webbrowser
 import zlib
 from contextlib import contextmanager
@@ -807,6 +815,119 @@ def document(action):
     return {"pages": len(pending_pages())}
 
 
+# ---------------------------------------------------------------- macOS app (--install)
+# ScanRevive.app opens the page in the browser. The server itself runs in the background as a login item,
+# so there is no Terminal window to keep open and the scanner buttons always work.
+
+LABEL = "io.github.scanrevive"
+AGENT = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
+LOG = Path.home() / "Library" / "Logs" / "ScanRevive.log"
+PROTECTED = ("Desktop", "Documents", "Downloads", "Library/Mobile Documents")  # off-limits to background programs
+
+LAUNCHER = """#!/bin/sh
+# Opens ScanRevive in the browser, starting it in the background first if it isn't running.
+URL={url}
+up() {{ /usr/bin/curl -fs -o /dev/null --max-time 1 "${{URL}}api/state"; }}
+if ! up; then
+  if ! /bin/launchctl kickstart "gui/$(/usr/bin/id -u)/{label}" 2>/dev/null; then
+    "$(dirname "$0")/scanrevive-server" >>{log} 2>&1 &
+  fi
+  i=0
+  while ! up && [ $i -lt 80 ]; do sleep 0.25; i=$((i + 1)); done
+fi
+exec /usr/bin/open "$URL"
+"""
+
+SERVER = """#!/bin/sh
+export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+exec {cmd}
+"""
+
+
+def write_app(app, url, cmd, icon=None):
+    """Builds ScanRevive.app: a launcher that opens the page, plus the script the login item runs."""
+    shutil.rmtree(app, ignore_errors=True)
+    macos, res = app / "Contents" / "MacOS", app / "Contents" / "Resources"
+    macos.mkdir(parents=True)
+    res.mkdir()
+    info = {"CFBundleName": "ScanRevive", "CFBundleDisplayName": "ScanRevive", "CFBundleIdentifier": LABEL,
+            "CFBundleExecutable": "ScanRevive", "CFBundlePackageType": "APPL", "CFBundleVersion": "1",
+            "CFBundleShortVersionString": "1.0", "LSUIElement": True}  # no Dock icon for the split second it runs
+    if icon and icon.exists():
+        with tempfile.TemporaryDirectory(suffix=".iconset") as iconset:
+            for size in (16, 32, 128, 256, 512):
+                for scale, suffix in ((1, ""), (2, "@2x")):
+                    run("sips", "-z", str(size * scale), str(size * scale), icon,
+                        "--out", Path(iconset) / f"icon_{size}x{size}{suffix}.png")
+            run("iconutil", "-c", "icns", iconset, "-o", res / "ScanRevive.icns")
+        info["CFBundleIconFile"] = "ScanRevive"
+    (app / "Contents" / "Info.plist").write_bytes(plistlib.dumps(info))
+    for name, text in (("ScanRevive", LAUNCHER.format(url=shlex.quote(url), label=LABEL, log=shlex.quote(str(LOG)))),
+                       ("scanrevive-server", SERVER.format(cmd=" ".join(map(shlex.quote, cmd))))):
+        (macos / name).write_text(text)
+        (macos / name).chmod(0o755)
+
+
+def is_running(url):
+    try:
+        with urllib.request.urlopen(url + "api/state", timeout=2) as r:
+            return "connected" in json.load(r)
+    except (OSError, ValueError):
+        return False
+
+
+def uninstall(quiet=False):
+    subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}/{LABEL}"], capture_output=True)
+    AGENT.unlink(missing_ok=True)
+    for apps in (Path("/Applications"), Path.home() / "Applications"):
+        if (apps / "ScanRevive.app" / "Contents" / "MacOS" / "scanrevive-server").exists():  # only our own app
+            shutil.rmtree(apps / "ScanRevive.app")
+    if not quiet:
+        print("ScanRevive.app and its login item are removed. Your scans are still in their folder.")
+
+
+def install(a):
+    if sys.platform != "darwin":
+        sys.exit("--install is for macOS. On Linux, run scanrevive.py as a systemd user service.")
+    out = Path(a.out).expanduser().resolve()
+    for p in (HERE, out):
+        if any(p == Path.home() / d or Path.home() / d in p.parents for d in PROTECTED):
+            sys.exit(f"{p} is in a folder that macOS keeps closed to programs running in the background.\n"
+                     "Move ScanRevive to your home folder (or choose another --out folder) and run --install again.")
+    load_libsane()  # stops here, with instructions, if SANE is missing
+    python = "/usr/bin/python3" if Path("/usr/bin/python3").exists() else sys.executable
+    cmd = [python, str(HERE / "scanrevive.py"), "--no-browser", "--port", str(a.port), "--host", a.host,
+           "--out", str(out)] + (["--device", a.device] if a.device else [])
+    host = a.host if a.host not in ("127.0.0.1", "0.0.0.0", "::", "::1") else "localhost"
+    url = f"http://{host}:{a.port}/"
+
+    uninstall(quiet=True)
+    if is_running(url):
+        print("ScanRevive is also open in a Terminal window. Close that window: from now on it runs in the background.")
+    apps = Path("/Applications") if os.access("/Applications", os.W_OK) else Path.home() / "Applications"
+    apps.mkdir(exist_ok=True)
+    app = apps / "ScanRevive.app"
+    modern = int(platform.mac_ver()[0].split(".")[0] or 0) >= 26  # macOS 26+ rounds the corners itself
+    write_app(app, url, cmd, HERE / "assets" / ("icon.png" if modern else "icon-classic.png"))
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    AGENT.parent.mkdir(parents=True, exist_ok=True)
+    AGENT.write_bytes(plistlib.dumps({
+        "Label": LABEL, "ProgramArguments": [str(app / "Contents" / "MacOS" / "scanrevive-server")],
+        "RunAtLoad": True, "ProcessType": "Interactive",  # no background throttling while scanning
+        "StandardOutPath": str(LOG), "StandardErrorPath": str(LOG)}))
+    for _ in range(20):  # bootout of the previous copy may still be finishing
+        if subprocess.run(["launchctl", "bootstrap", f"gui/{os.getuid()}", AGENT], capture_output=True).returncode == 0:
+            break
+        time.sleep(0.5)
+    else:
+        sys.exit(f"Could not start the login item. Details may be in {LOG}")
+    run("open", "-R", app)
+    run("open", app)
+    print(f"ScanRevive is installed in {apps}. Open it like any other app, or drag it to the Dock.\n"
+          f"It runs in the background from login, so the scanner buttons always work.\n"
+          f"Scans are saved to {out}")
+
+
 # ---------------------------------------------------------------- self-check (no scanner needed)
 
 def selftest():
@@ -876,6 +997,17 @@ def selftest():
             doc = OUT / document("finish")["file"]
             assert check_pdf(doc, 2) == [1, 2] and pending_pages() == []  # bw (9x1), padded (2x2)
             assert not any(p["name"].startswith(".") for p in list_scans())
+
+            if sys.platform == "darwin":
+                app, cmd = Path(tmp) / "ScanRevive.app", ["/usr/bin/python3", "/a b/scanrevive.py", "--out", "/it's"]
+                write_app(app, "http://localhost:8110/", cmd, HERE / "assets" / "icon.png")
+                info = plistlib.loads((app / "Contents" / "Info.plist").read_bytes())
+                assert (app / "Contents" / "Resources" / f"{info['CFBundleIconFile']}.icns").stat().st_size
+                for name in ("ScanRevive", "scanrevive-server"):
+                    assert os.access(app / "Contents" / "MacOS" / name, os.X_OK)
+                    run("sh", "-n", app / "Contents" / "MacOS" / name)
+                server = (app / "Contents" / "MacOS" / "scanrevive-server").read_text()
+                assert shlex.split(server.split("exec ", 1)[1]) == cmd
     print("selftest OK")
 
 
@@ -889,18 +1021,37 @@ def main():
     ap.add_argument("--out", default="~/Pictures/ScanRevive", help="folder where scans are saved")
     ap.add_argument("--device", default="", help="pick a scanner by (part of) its name, e.g. 'LiDE 110'")
     ap.add_argument("--no-browser", action="store_true", help="do not open the browser on start")
+    ap.add_argument("--install", action="store_true",
+                    help="macOS: add ScanRevive to Applications and keep it running in the background from login "
+                         "(the other options given here are kept)")
+    ap.add_argument("--uninstall", action="store_true", help="remove what --install added; your scans are kept")
     ap.add_argument("--selftest", action="store_true", help="check the image/PDF code and exit")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    if a.install:
+        return install(a)
+    if a.uninstall:
+        return uninstall()
     L = load_libsane()
     OUT = Path(a.out).expanduser()
     OUT.mkdir(parents=True, exist_ok=True)
     LOOPBACK = a.host in ("127.0.0.1", "localhost", "::1")
+    url = f"http://localhost:{a.port}/"
+    try:
+        httpd = ThreadingHTTPServer((a.host, a.port), Handler)
+    except OSError as e:
+        if e.errno != errno.EADDRINUSE:
+            raise
+        if not is_running(url):
+            sys.exit(f"Port {a.port} is used by another program. Start with --port {a.port + 1}")
+        print(f"ScanRevive is already running at {url}")
+        if not a.no_browser:
+            webbrowser.open(url)
+        return
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit())  # logout or --uninstall: close the scanner cleanly
     SCANNER = Scanner(a.device)
     threading.Thread(target=SCANNER.watch, daemon=True).start()
-    httpd = ThreadingHTTPServer((a.host, a.port), Handler)
-    url = f"http://localhost:{a.port}/"
     print(f"ScanRevive is running at {url}\nScans are saved to {OUT}\nPress Ctrl+C to quit.")
     if not a.no_browser:
         webbrowser.open(url)
