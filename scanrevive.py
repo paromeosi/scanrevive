@@ -27,7 +27,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 HERE = Path(__file__).resolve().parent
-FORMATS = {"png": ".png", "jpeg": ".jpg", "tiff": ".tif", "pdf": ".pdf"}
+FORMATS = {"png": ".png", "jpeg": ".jpg", "tiff": ".tif", "pdf": ".pdf", "document": ".pdf"}  # document = multi-page PDF
 EXTS = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".pdf")
 DEFAULTS = {"mode": "Color", "resolution": 300}  # friendlier than most backends' 75 dpi gray
 
@@ -201,40 +201,71 @@ def image_info(path):
             float(v.get("dpiWidth", 0)) or 72.0, int(v.get("samplesPerPixel", 3)))
 
 
-def make_pdf(images, out, quality=85):
-    """Multi-page PDF, one JPEG per page at its real size (an A4 scan gives an A4 page)."""
-    objs, kids = [b"", b""], []
-    with tempfile.TemporaryDirectory() as tmp:
-        for k, img in enumerate(images):
-            jpg = img
-            if img.suffix.lower() not in (".jpg", ".jpeg"):
-                jpg = Path(tmp, f"{k}.jpg")
-                run("sips", "-s", "format", "jpeg", "-s", "formatOptions", quality, img, "--out", jpg)
-            w, h, dpi, spp = image_info(jpg)
-            data = jpg.read_bytes()
-            pw, ph = w * 72 / dpi, h * 72 / dpi
-            space = {1: b"DeviceGray", 4: b"DeviceCMYK"}.get(spp, b"DeviceRGB")
-            draw = b"q %.3f 0 0 %.3f 0 0 cm /Im Do Q" % (pw, ph)
-            n = len(objs)
-            objs.append(b"<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /%s "
-                        b"/BitsPerComponent 8 /Filter /DCTDecode /Length %d >>\nstream\n%s\nendstream"
-                        % (w, h, space, len(data), data))
-            objs.append(b"<< /Length %d >>\nstream\n%s\nendstream" % (len(draw), draw))
-            objs.append(b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.3f %.3f] "
-                        b"/Resources << /XObject << /Im %d 0 R >> >> /Contents %d 0 R >>" % (pw, ph, n + 1, n + 2))
-            kids.append(b"%d 0 R" % (n + 3))
-    objs[0] = b"<< /Type /Catalog /Pages 2 0 R >>"
-    objs[1] = b"<< /Type /Pages /Kids [%s] /Count %d >>" % (b" ".join(kids), len(kids))
-    pdf, offsets = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"), []
-    for i, o in enumerate(objs, 1):
-        offsets.append(len(pdf))
-        pdf += b"%d 0 obj\n%s\nendobj\n" % (i, o)
-    xref = len(pdf)
-    pdf += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objs) + 1)
-    pdf += b"".join(b"%010d 00000 n \n" % o for o in offsets)
-    pdf += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (len(objs) + 1, xref)
-    Path(out).write_bytes(pdf)
-    return Path(out)
+OUR_IMAGE = re.compile(rb"/Width (\d+) /Height (\d+) /ColorSpace /(\w+) /BitsPerComponent 8 "
+                       rb"/Filter /DCTDecode /Length (\d+) >>\nstream\n")
+OUR_PAGE = re.compile(rb"/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]")
+
+
+def pdf_pages(path):
+    """Pages of a PDF written by make_pdf(): (jpeg, width, height, color space, page width pt, page height pt)."""
+    data = path.read_bytes()
+    images = [(data[m.end():m.end() + int(m[4])], int(m[1]), int(m[2]), m[3]) for m in OUR_IMAGE.finditer(data)]
+    boxes = [(float(w), float(h)) for w, h in OUR_PAGE.findall(data)]
+    if not images or len(images) != len(boxes):
+        raise ValueError(f"{path.name} was not made by ScanRevive, so it cannot be combined")
+    return [img + box for img, box in zip(images, boxes)]
+
+
+def source_pages(src, tmp_jpg, quality):
+    if src.suffix.lower() == ".pdf":
+        return pdf_pages(src)
+    jpg = src
+    if src.suffix.lower() not in (".jpg", ".jpeg"):
+        run("sips", "-s", "format", "jpeg", "-s", "formatOptions", quality, src, "--out", tmp_jpg)
+        jpg = tmp_jpg
+    w, h, dpi, spp = image_info(jpg)
+    space = {1: b"DeviceGray", 4: b"DeviceCMYK"}.get(spp, b"DeviceRGB")
+    return [(jpg.read_bytes(), w, h, space, w * 72 / dpi, h * 72 / dpi)]
+
+
+def make_pdf(sources, out, quality=85):
+    """Multi-page PDF, one JPEG per page at its real size (an A4 scan gives an A4 page).
+    Sources are images or PDFs made by ScanRevive; pages are written one at a time, straight to disk."""
+    out = Path(out)
+    offsets, kids = {}, []
+
+    def obj(n, *parts):
+        offsets[n] = f.tell()
+        f.write(b"%d 0 obj\n" % n)
+        for part in parts:
+            f.write(part)
+        f.write(b"\nendobj\n")
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp, open(out, "wb") as f:
+            f.write(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+            n = 3  # 1 and 2 (catalog, page tree) are written last, once all pages are known
+            for k, src in enumerate(sources):
+                for data, w, h, space, pw, ph in source_pages(src, Path(tmp, f"{k}.jpg"), quality):
+                    draw = b"q %.3f 0 0 %.3f 0 0 cm /Im Do Q" % (pw, ph)
+                    obj(n, b"<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace /%s "
+                           b"/BitsPerComponent 8 /Filter /DCTDecode /Length %d >>\nstream\n" % (w, h, space, len(data)),
+                        data, b"\nendstream")
+                    obj(n + 1, b"<< /Length %d >>\nstream\n%s\nendstream" % (len(draw), draw))
+                    obj(n + 2, b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.3f %.3f] "
+                               b"/Resources << /XObject << /Im %d 0 R >> >> /Contents %d 0 R >>" % (pw, ph, n, n + 1))
+                    kids.append(b"%d 0 R" % (n + 2))
+                    n += 3
+            obj(1, b"<< /Type /Catalog /Pages 2 0 R >>")
+            obj(2, b"<< /Type /Pages /Kids [%s] /Count %d >>" % (b" ".join(kids), len(kids)))
+            xref = f.tell()
+            f.write(b"xref\n0 %d\n0000000000 65535 f \n" % n)
+            f.write(b"".join(b"%010d 00000 n \n" % offsets[i] for i in range(1, n)))
+            f.write(b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (n, xref))
+    except BaseException:
+        out.unlink(missing_ok=True)
+        raise
+    return out
 
 
 def convert(png, fmt, quality):
@@ -514,7 +545,9 @@ class Scanner:
                 except SaneError as e:  # USB hiccup: the session reconnected, try once more
                     if e.status != IO_ERROR or attempt == 2:
                         raise
-            if kind == "scan":
+            if kind == "scan" and fmt == "document":
+                job["page"] = add_page(png, quality)
+            elif kind == "scan":
                 out = convert(png, fmt, quality)
                 job["file"] = out.name
                 if then:
@@ -634,7 +667,8 @@ class Scanner:
         return {"connected": self.h is not None, "device": self.device, "error": self.error,
                 "devices": [{"name": d["name"], "label": f"{d['vendor']} {d['model']}"} for d in self.devices],
                 "job": dict(self.job), "events": self.events[-10:],
-                "outdir": str(OUT).replace(str(Path.home()), "~", 1), "format": self.last_format}
+                "outdir": str(OUT).replace(str(Path.home()), "~", 1), "format": self.last_format,
+                "pages": len(pending_pages())}
 
 
 # ---------------------------------------------------------------- web server
@@ -720,6 +754,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/scan": lambda: ok(SCANNER.start("scan", body.get("format", "png"), body.get("quality", 85))),
             "/api/cancel": lambda: ok(SCANNER.cancel()),
             "/api/pdf": lambda: ok({"file": combine(body["files"], body.get("quality", 85)).name}),
+            "/api/document": lambda: ok(document(body.get("action"))),
             "/api/open-folder": lambda: ok(run("open" if sys.platform == "darwin" else "xdg-open", OUT) and None),
         }
         path = urlparse(self.path).path
@@ -730,9 +765,44 @@ class Handler(BaseHTTPRequestHandler):
 
 def combine(names, quality):
     paths = [scan_path(n) for n in names]
-    if not paths or None in paths or any(p.suffix.lower() == ".pdf" for p in paths):
-        raise ValueError("Pick one or more image scans to combine")
+    if not paths or None in paths:
+        raise ValueError("Pick one or more scans to combine")
     return make_pdf(paths, new_path("document", ".pdf"), max(1, min(100, int(quality))))
+
+
+# ---------------------------------------------------------------- multi-page mode
+# Pages wait in a hidden folder until "Finish PDF", so a crash or restart never loses them.
+
+def pending_pages():
+    folder = OUT / ".document"
+    return sorted(folder.glob("page-*.jpg")) if folder.is_dir() else []
+
+
+def add_page(png, quality):
+    pages = pending_pages()
+    number = int(pages[-1].stem[5:]) + 1 if pages else 1
+    jpg = convert(png, "jpeg", quality)
+    (OUT / ".document").mkdir(exist_ok=True)
+    jpg.rename(OUT / ".document" / f"page-{number:04d}.jpg")
+    return len(pages) + 1
+
+
+def document(action):
+    if SCANNER.job["state"] == "running":
+        raise Busy("Wait for the current scan to finish")
+    pages = pending_pages()
+    if action == "finish":
+        if not pages:
+            raise ValueError("The document has no pages yet")
+        out = make_pdf(pages, new_path("document", ".pdf"))
+        for p in pages:
+            p.unlink()
+        return {"file": out.name}
+    if action not in ("undo", "discard"):
+        raise ValueError(f"Unknown action: {action}")
+    for p in pages if action == "discard" else pages[-1:]:
+        p.unlink()
+    return {"pages": len(pending_pages())}
 
 
 # ---------------------------------------------------------------- self-check (no scanner needed)
@@ -771,12 +841,39 @@ def selftest():
             assert decode(OUT / f"{name}.png") == (w, len(data) // bpl, want), name
         assert scan_path("rgb.png") and not scan_path("../rgb.png") and not scan_path(".thumbs")
         if shutil.which("sips"):
-            pdf = combine(["rgb.png", "g16.png"], 80).read_bytes()
-            assert pdf.startswith(b"%PDF-1.4") and pdf.count(b"/Type /Page ") == 2
-            xref = int(pdf.rsplit(b"startxref\n", 1)[1].split()[0])
-            for k, line in enumerate(pdf[xref:].split(b"\n")[3:3 + 7], 1):
-                assert pdf[int(line[:10]):].startswith(b"%d 0 obj" % k), "bad xref"
+            def check_pdf(path, pages):
+                pdf = path.read_bytes()
+                assert pdf.startswith(b"%PDF-1.4") and pdf.count(b"/Type /Page ") == pages
+                xref = int(pdf.rsplit(b"startxref\n", 1)[1].split()[0])
+                count = int(pdf[xref:].split(b"\n")[1].split()[1])
+                for k, line in enumerate(pdf[xref:].split(b"\n")[3:3 + count - 1], 1):
+                    assert pdf[int(line[:10]):].startswith(b"%d 0 obj" % k), "bad xref"
+                return [h for _, _, h, *_ in pdf_pages(path)]
+
+            two = combine(["rgb.png", "g16.png"], 80)
+            assert check_pdf(two, 2) == [2, 1]  # page heights: rgb is 3x2, g16 is 2x1
+            # PDFs made by ScanRevive combine too, keeping their pages in the order they were picked
+            assert check_pdf(combine(["bw.png", two.name], 80), 3) == [1, 2, 1]
+            (OUT / "foreign.pdf").write_bytes(b"%PDF-1.4\n1 0 obj\n<< >>\nendobj\n")
+            try:
+                combine(["foreign.pdf"], 80)
+                raise AssertionError("foreign PDF accepted")
+            except ValueError:
+                pass
+            assert len(list(OUT.glob("document-*.pdf"))) == 2, "partial PDF left behind"
             assert convert(OUT / "rgb.png", "jpeg", 80).suffix == ".jpg"
+
+            global SCANNER
+            SCANNER = Scanner()  # idle; no libsane needed
+            for name in ("bw", "g16", "padded"):
+                shutil.copy(OUT / f"{name}.png", OUT / f"page-{name}.png")
+            assert add_page(OUT / "page-bw.png", 80) == 1 and add_page(OUT / "page-g16.png", 80) == 2
+            assert document("undo") == {"pages": 1}  # drops g16, the last page
+            assert add_page(OUT / "page-padded.png", 80) == 2
+            assert not list(OUT.glob("page-*")), "scan files left in the gallery"
+            doc = OUT / document("finish")["file"]
+            assert check_pdf(doc, 2) == [1, 2] and pending_pages() == []  # bw (9x1), padded (2x2)
+            assert not any(p["name"].startswith(".") for p in list_scans())
     print("selftest OK")
 
 

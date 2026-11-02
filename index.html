@@ -49,6 +49,7 @@
   .hw { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 6px; transition: background .3s; }
   .hw.flash { background: var(--sel); }
   .muted { color: var(--muted); font-size: 12px; }
+  .docbox { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--accent); border-radius: 8px; background: var(--sel); font-size: 13px; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .bar .end { margin-left: auto; }
   h2 { font-size: 15px; margin: 0; }
@@ -62,6 +63,8 @@
   figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 6px; }
   figure img, figure .file { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--bg); border-radius: 4px; display: grid; place-items: center; color: var(--muted); font-weight: 600; }
   figcaption { font-size: 12px; word-break: break-all; display: flex; gap: 6px; align-items: start; }
+  .order { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent); text-align: center; font-size: 11px; line-height: 18px; }
+  .order:empty { display: none; }
   #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
   #toast.show { opacity: 1; }
   #toast.err { background: var(--danger); color: #fff; }
@@ -84,6 +87,14 @@
       <progress id="progress" max="1" value="0" hidden></progress>
       <div id="jobtext" class="muted" aria-live="polite"></div>
     </div>
+    <div id="doc" class="docbox" hidden>
+      <div id="doccount" aria-live="polite"></div>
+      <div class="bar">
+        <button id="docfinish" class="primary">Finish PDF</button>
+        <button id="docundo">Remove last page</button>
+        <button id="docdiscard">Discard</button>
+      </div>
+    </div>
     <fieldset>
       <legend>Output</legend>
       <div class="row">
@@ -93,6 +104,7 @@
           <option value="jpeg">JPEG (small files, photos)</option>
           <option value="tiff">TIFF (archival)</option>
           <option value="pdf">PDF (documents)</option>
+          <option value="document">PDF, multi-page (scan pages one by one)</option>
         </select>
       </div>
       <div class="row" id="qrow">
@@ -274,24 +286,27 @@ $("#full").onclick = () => { const b = bounds(); setOpts({ "tl-x": b.x0, "tl-y":
 
 // ---------------------------------------------------------------- saved scans
 
-let picked = [];
+let picked = [], badges = new Map();
 async function loadScans() {
   const { scans } = await api("/api/scans").catch(() => ({ scans: [] }));
   picked = picked.filter(n => scans.some(s => s.name === n));
+  badges = new Map();
   $("#gallery").replaceChildren(...scans.map(f => {
-    const url = encodeURIComponent(f.name), isPdf = /\.pdf$/i.test(f.name);
-    const box = el("input", { type: "checkbox", checked: picked.includes(f.name), disabled: isPdf, ariaLabel: "Select " + f.name });
+    const url = encodeURIComponent(f.name), badge = el("b", { className: "order" });
+    const box = el("input", { type: "checkbox", checked: picked.includes(f.name), ariaLabel: "Select " + f.name });
+    badges.set(f.name, badge);
     box.onchange = () => { picked = box.checked ? [...picked, f.name] : picked.filter(n => n !== f.name); updatePdfButton(); };
     const img = el("img", { src: "/thumbs/" + url, alt: f.name, loading: "lazy" });
     img.onerror = () => img.replaceWith(el("div", { className: "file", textContent: f.name.split(".").pop().toUpperCase() }));
     return el("figure", {}, el("a", { href: "/scans/" + url, target: "_blank", rel: "noopener" }, img),
-      el("figcaption", {}, box, el("span", { textContent: f.name })));
+      el("figcaption", {}, box, badge, el("span", { textContent: f.name })));
   }));
   updatePdfButton();
 }
 function updatePdfButton() {
+  for (const [name, badge] of badges) badge.textContent = picked.includes(name) ? picked.indexOf(name) + 1 : "";
   $("#pdf").disabled = !picked.length;
-  $("#pdf").textContent = picked.length ? `Combine ${picked.length} page${picked.length > 1 ? "s" : ""} into PDF` : "Combine selected into PDF";
+  $("#pdf").textContent = picked.length ? `Combine ${picked.length} selected into one PDF` : "Combine selected into PDF";
 }
 
 // ---------------------------------------------------------------- actions
@@ -301,9 +316,33 @@ const saveOutput = () => {
   store.set("format", $("#format").value);
   store.set("quality", $("#quality").value);
   $("#qval").textContent = $("#quality").value;
-  $("#qrow").hidden = !["jpeg", "pdf"].includes($("#format").value);
+  $("#qrow").hidden = !["jpeg", "pdf", "document"].includes($("#format").value);
   api("/api/output", output()).catch(() => {});
+  renderDoc();
 };
+
+// Multi-page mode: every scan becomes the next page until "Finish PDF".
+let docPages = 0, busy = false;
+function renderDoc() {
+  const on = $("#format").value === "document";
+  $("#doc").hidden = !on && !docPages;
+  $("#doccount").textContent = docPages
+    ? `Multi-page PDF: ${docPages} page${docPages > 1 ? "s" : ""} so far.`
+    : "Multi-page PDF: put the first page on the glass and press Scan, or SCAN on the scanner.";
+  $("#docfinish").disabled = $("#docundo").disabled = $("#docdiscard").disabled = busy || !docPages;
+  $("#scan").textContent = on ? `Scan page ${docPages + 1}` : "Scan";
+}
+async function docAction(action) {
+  try {
+    const r = await api("/api/document", { action });
+    if (r.file) { toast("Saved " + r.file); loadScans(); }
+    docPages = r.file ? 0 : r.pages;
+    renderDoc();
+  } catch (e) { fail(e); }
+}
+$("#docfinish").onclick = () => docAction("finish");
+$("#docundo").onclick = () => docAction("undo");
+$("#docdiscard").onclick = () => { if (confirm("Discard all pages of this multi-page PDF?")) docAction("discard"); };
 $("#format").value = store.get("format") || "png";
 $("#quality").value = store.get("quality") || 85;
 $("#format").onchange = $("#quality").onchange = saveOutput;
@@ -348,6 +387,9 @@ async function poll() {
   if (s.connected !== connected) { connected = s.connected; if (connected) loadOptions(); }
 
   const j = s.job, running = j.state === "running";
+  docPages = s.pages;
+  busy = running;
+  renderDoc();
   $("#preview").disabled = $("#scan").disabled = running || !s.connected;
   $("#cancel").disabled = !running;
   const p = $("#progress");
@@ -361,7 +403,10 @@ async function poll() {
   if (!running && j.id > seenJob) {
     seenJob = j.id;
     if (j.state === "done" && j.kind === "preview") { $("#pv").src = "/api/preview.png?" + j.id; $("#hint").hidden = true; }
-    if (j.state === "done" && j.kind === "scan") { toast("Saved " + j.file); loadScans(); }
+    if (j.state === "done" && j.kind === "scan") {
+      toast(j.page ? `Page ${j.page} added. Put the next page on the glass.` : "Saved " + j.file);
+      if (j.file) loadScans();
+    }
     if (j.state === "error") { toast(j.error, true); loadScans(); }
     if (j.state === "cancelled") toast("Cancelled");
   }

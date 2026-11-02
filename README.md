@@ -19,7 +19,7 @@ ScanRevive brings them back with a simple web page that runs on your own Mac. Yo
 - **Preview and crop**: scan the whole glass at low resolution, then drag to choose the area.
 - **All scanner settings**: color or gray, 75 to 4800 dpi, 8 or 16-bit, brightness, contrast, gamma, lamp timer, calibration. The controls are built from what the scanner reports, so nothing is hidden.
 - **PNG, JPEG, TIFF and PDF** output. PDFs keep the real paper size, so an A4 page stays A4.
-- **Multi-page PDF**: tick the scans in the order you want and combine them into one document.
+- **Multi-page PDF**: choose *PDF, multi-page*, scan the pages one by one from the page or with the scanner's SCAN button, then press **Finish PDF**. You can also combine scans and PDFs you already have into one document.
 - **The scanner's own buttons work** (LiDE 110: COPY, SCAN, PDF, E-MAIL). See [Scanner buttons](#scanner-buttons).
 - **Robust**: reconnects by itself when the scanner is unplugged or changes USB address, retries once after a USB hiccup, and a scan is never lost when a conversion fails.
 - **Private**: everything stays on your computer. There is no telemetry and no cloud. By default only your own Mac can open the page.
@@ -59,7 +59,8 @@ Your browser opens **http://localhost:8110**. Then:
 |---|---|
 | **Start ScanRevive** | Double-click **`ScanRevive.command`** in the `ScanRevive` folder in your home folder. A Terminal window opens and the page appears in your browser. Keep the Terminal window open while you scan. |
 | **Scan one page** | Put it face down on the glass, press **Preview**, drag a box around it, choose the file format and press **Scan**. It appears under **Scans**. Click it to open it. |
-| **Make a PDF of several pages** | Scan each page, using JPEG for small files. Under **Scans**, tick the pages in order, then press **Combine … into PDF**. |
+| **Make a PDF of several pages** | Choose **PDF, multi-page** as the file format. Press **Scan page 1**, put the next page on the glass, press **Scan page 2**, and so on. The SCAN button on the scanner works too. At the end press **Finish PDF**. If a page comes out wrong, press **Remove last page** and scan it again. |
+| **Combine scans you already have** | Under **Scans**, tick them in order. A number shows each page's position. Then press **Combine … into one PDF**. |
 | **Scan without touching the computer** | Press a [button on the scanner](#scanner-buttons). |
 | **Find your files** | Press **Open folder**, or in Finder go to **Pictures → ScanRevive**. |
 | **Stop ScanRevive** | Close the Terminal window. |
@@ -83,7 +84,7 @@ While ScanRevive is running, the buttons on the scanner work:
 
 | Button | What it does |
 |---|---|
-| **SCAN** | Scans with the current settings and file format |
+| **SCAN** | Scans with the current settings and file format. In multi-page mode it adds the next page. |
 | **PDF** | Scans to a PDF |
 | **E-MAIL** | Scans to JPEG and opens a new Mail message with the file attached |
 | **COPY** | Scans and prints on your default printer, like a photocopier |
