@@ -4,147 +4,403 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ScanRevive</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='9' width='26' height='14' rx='3' fill='%230a66d8'/><rect x='6' y='15' width='20' height='2' fill='white'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='8' width='28' height='18' rx='5' fill='%232563eb'/><rect x='6' y='15' width='20' height='2.5' rx='1.25' fill='white'/></svg>">
 <style>
   :root {
-    --bg: #f5f5f3; --panel: #ffffff; --text: #1c1c1e; --muted: #66666b; --line: #e0e0dc;
-    --accent: #0a66d8; --on-accent: #ffffff; --danger: #c62828; --ok: #2e7d32; --sel: rgba(10, 102, 216, .16);
+    --bg: #f3f4f6; --surface: #ffffff; --surface-2: #f7f8fa; --sunken: #eceef2;
+    --line: #e4e7ec; --line-strong: #d0d5dd;
+    --text: #101828; --text-2: #344054; --muted: #667085;
+    --accent: #2563eb; --accent-strong: #1d4ed8; --accent-soft: #eaf1ff; --on-accent: #ffffff;
+    --ok: #12b76a; --danger: #d92d20; --dim: rgba(9, 12, 18, .4);
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
+    --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 8px 24px -10px rgba(16, 24, 40, .12);
+    --shadow-lg: 0 16px 40px -12px rgba(16, 24, 40, .28);
+    --r-lg: 16px; --r: 10px; --r-sm: 8px;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #141416; --panel: #1e1e21; --text: #f1f1f3; --muted: #a0a0a8; --line: #323236;
-      --accent: #4d9bff; --on-accent: #06101e; --danger: #ff6b6b; --ok: #6bd17a; --sel: rgba(77, 155, 255, .2);
+      --bg: #0c0e12; --surface: #15181e; --surface-2: #1b1f27; --sunken: #101318;
+      --line: #252a33; --line-strong: #353b47;
+      --text: #f2f4f7; --text-2: #d0d5dd; --muted: #98a2b3;
+      --accent: #6d9bff; --accent-strong: #8db1ff; --accent-soft: rgba(109, 155, 255, .13); --on-accent: #0b1530;
+      --ok: #32d583; --danger: #f97066; --dim: rgba(0, 0, 0, .55);
+      --shadow-sm: none; --shadow: 0 8px 24px -12px rgba(0, 0, 0, .6); --shadow-lg: 0 18px 44px -14px rgba(0, 0, 0, .75);
       color-scheme: dark;
     }
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
-  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
-  header h1 { margin: 0; font-size: 16px; }
-  header select { width: auto; }
-  #conn { display: flex; align-items: center; gap: 8px; color: var(--muted); margin-left: auto; }
-  #conn::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--danger); }
-  #conn.on::before { background: var(--ok); }
-  main { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: calc(100vh - 52px); }
-  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-  #work { padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  @media (max-width: 820px) { main { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Noto Sans", sans-serif; -webkit-font-smoothing: antialiased; }
   button, select, input { font: inherit; color: inherit; }
-  button { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; }
-  button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
-  button:disabled { opacity: .45; cursor: default; }
-  button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  select, input[type=number], input[type=text] { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); }
-  input[type=range] { width: 100%; accent-color: var(--accent); }
-  .actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
-  progress { width: 100%; height: 6px; accent-color: var(--accent); }
-  fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 10px 0 0; display: grid; gap: 10px; min-width: 0; }
-  legend { padding: 0 6px 0 0; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-  .row { display: grid; gap: 4px; }
-  .row label { font-size: 13px; }
-  .row.check { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
-  .slider { display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center; }
-  .hw { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 6px; transition: background .3s; }
-  .hw.flash { background: var(--sel); }
-  .muted { color: var(--muted); font-size: 12px; }
-  .docbox { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--accent); border-radius: 8px; background: var(--sel); font-size: 13px; }
-  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .bar .end { margin-left: auto; }
-  h2 { font-size: 15px; margin: 0; }
-  #stage { position: relative; aspect-ratio: var(--ar, .72); width: min(100%, calc(72vh * var(--ar, .72))); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; touch-action: none; cursor: crosshair; user-select: none; }
-  #stage img { width: 100%; height: 100%; display: block; object-fit: fill; pointer-events: none; -webkit-user-drag: none; }
-  #stage img:not([src]) { visibility: hidden; }
-  #hint { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; color: var(--muted); text-align: center; pointer-events: none; }
-  #sel { position: absolute; border: 2px solid var(--accent); background: var(--sel); box-shadow: 0 0 0 9999px rgba(0, 0, 0, .28); pointer-events: none; }
-  #gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-  #gallery:empty::after { content: "No scans yet."; color: var(--muted); }
-  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 6px; }
-  figure img, figure .file { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--bg); border-radius: 4px; display: grid; place-items: center; color: var(--muted); font-weight: 600; }
-  figcaption { font-size: 12px; word-break: break-all; display: flex; gap: 6px; align-items: start; }
-  .order { flex: none; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent); text-align: center; font-size: 11px; line-height: 18px; }
-  .order:empty { display: none; }
-  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
-  #toast.show { opacity: 1; }
-  #toast.err { background: var(--danger); color: #fff; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ic { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---- top bar */
+  .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+  .brand svg { width: 30px; height: 30px; }
+  .topbar select { width: auto; height: 32px; }
+  .status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-sm); }
+  .status span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .status.ready .dot { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+  .status.busy .dot { background: var(--accent); animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent); } }
+
+  /* ---- layout */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-areas: "stage panel" "gallery panel"; gap: 24px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); }
+  .stage-card { grid-area: stage; overflow: hidden; }
+  .panel { grid-area: panel; position: sticky; top: 81px; display: flex; flex-direction: column; max-height: calc(100vh - 105px); overflow: hidden; }
+  .gallery-card { grid-area: gallery; }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "panel" "gallery"; gap: 16px; padding: 16px; }
+    .panel { position: static; max-height: none; overflow: visible; }
+    .panel-foot { position: sticky; bottom: 0; border-radius: 0 0 var(--r-lg) var(--r-lg); }
+    .topbar { padding: 10px 16px; }
+  }
+
+  /* ---- buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: var(--r); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text-2); font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: var(--shadow-sm); transition: background .15s, border-color .15s, box-shadow .15s, transform .05s; }
+  .btn:hover:not(:disabled) { background: var(--surface-2); }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .btn.primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
+  .btn.ghost:hover:not(:disabled) { background: var(--sunken); }
+  .btn.danger { color: var(--danger); }
+  .btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+  .btn.sm .ic { width: 16px; height: 16px; }
+  .btn.big { width: 100%; height: 50px; border-radius: 12px; font-size: 15px; }
+  .btn.big .ic { width: 20px; height: 20px; }
+
+  /* ---- scan area */
+  .stage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .chip { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; background: var(--sunken); color: var(--text-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .stage-bar .chip { margin-left: auto; }
+  .stage-wrap { display: grid; place-items: center; padding: 28px; background-color: var(--sunken); background-image: radial-gradient(var(--line-strong) 1px, transparent 1.2px); background-size: 18px 18px; }
+  #stage { position: relative; width: min(100%, calc(64vh * var(--ar, .72))); aspect-ratio: var(--ar, .72); overflow: hidden; border-radius: 4px; background: var(--surface); box-shadow: var(--shadow-lg); cursor: crosshair; touch-action: none; user-select: none; }
+  #stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; -webkit-user-drag: none; }
+  #stage img:not([src]) { display: none; }
+  .empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 24px; text-align: center; color: var(--muted); pointer-events: none; }
+  .empty .ic { width: 44px; height: 44px; margin-bottom: 6px; stroke-width: 1.4; color: var(--line-strong); }
+  .empty b { color: var(--text-2); font-size: 15px; font-weight: 600; max-width: 26ch; }
+  #sel { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 100vmax var(--dim); pointer-events: none; transition: box-shadow .2s; }
+  #stage.blank #sel { box-shadow: none; border-style: dashed; }
+  #sel i { position: absolute; width: 10px; height: 10px; border: 2px solid var(--accent); border-radius: 3px; background: var(--surface); }
+  #sel .tl { left: -6px; top: -6px; } #sel .tr { right: -6px; top: -6px; } #sel .bl { left: -6px; bottom: -6px; } #sel .br { right: -6px; bottom: -6px; }
+  #stage.warming #sel { animation: glow 1.4s ease-in-out infinite; }
+  @keyframes glow { 50% { border-color: color-mix(in srgb, var(--accent) 35%, transparent); } }
+  #sweep { position: absolute; height: 2px; background: var(--accent); pointer-events: none; transition: top .4s linear;
+    box-shadow: 0 0 10px 2px color-mix(in srgb, var(--accent) 80%, transparent), 0 0 34px 12px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .stage-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+
+  /* ---- settings panel */
+  .panel-body { display: flex; flex-direction: column; gap: 22px; padding: 20px; overflow: auto; }
+  .panel-foot { display: grid; gap: 10px; padding: 16px 20px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+  .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .group h3 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .hint { color: var(--accent); font-size: 12.5px; font-weight: 500; }
+  .seg { display: flex; gap: 3px; padding: 3px; border-radius: var(--r); background: var(--sunken); }
+  .seg-btn { flex: 1; min-width: 0; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: background .15s, box-shadow .15s; }
+  .seg-btn:hover { color: var(--text); }
+  .seg-btn.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(16, 24, 40, .14); }
+  .res-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .res-row select { width: auto; height: 38px; }
+  .res-row select.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .choices { overflow: hidden; border: 1px solid var(--line); border-radius: var(--r); }
+  .choice { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+  .choice:first-child { border-top: 0; }
+  .choice:hover { background: var(--surface-2); }
+  .choice input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .choice b { display: block; font-size: 13.5px; font-weight: 600; }
+  .choice small { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; }
+  .choice .ic { color: var(--muted); }
+  .choice .tick { display: grid; place-items: center; width: 18px; height: 18px; border: 1.5px solid var(--line-strong); border-radius: 50%; }
+  .choice:has(input:checked) { background: var(--accent-soft); }
+  .choice:has(input:checked) .ic { color: var(--accent); }
+  .choice:has(input:checked) .tick { border-color: var(--accent); background: var(--accent); }
+  .choice:has(input:checked) .tick::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--on-accent); }
+  .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .quality { display: grid; gap: 4px; margin-top: 14px; }
+  .quality label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .quality .scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11.5px; }
+  input[type=range] { width: 100%; margin: 4px 0; accent-color: var(--accent); }
+
+  .doc { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius: 12px; background: var(--accent-soft); }
+  .doc b { display: block; font-size: 14px; }
+  .doc p { margin: 2px 0 0; color: var(--text-2); font-size: 12.5px; }
+  .docpages { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .docpages:empty { display: none; }
+  .dp { position: relative; flex: none; width: 52px; margin: 0; aspect-ratio: 3 / 4; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+  .dp img { width: 100%; height: 100%; object-fit: cover; }
+  .dp span { position: absolute; right: 3px; bottom: 3px; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 700; }
+  .doc-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .doc-actions #docdiscard { margin-left: auto; }
+
+  details.more { border-top: 1px solid var(--line); }
+  details.more > summary { display: flex; align-items: center; gap: 10px; padding: 14px 0 2px; color: var(--text-2); font-weight: 600; list-style: none; cursor: pointer; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary .ic:last-child { margin-left: auto; transition: transform .2s; }
+  details.more[open] > summary .ic:last-child { transform: rotate(180deg); }
+  .more-body { display: grid; gap: 14px; padding-top: 14px; }
+  .subgroup { display: grid; gap: 12px; }
+  .subgroup h4 { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .field { display: grid; gap: 6px; }
+  .field label { color: var(--text-2); font-size: 13px; font-weight: 500; }
+  .field.check { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+  .slider { display: grid; grid-template-columns: 1fr 70px; align-items: center; gap: 10px; }
+  select, input[type=number], input[type=text] { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); color: var(--text); }
+  input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+  .switch-row { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 13px; }
+  .hw { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; font-size: 13px; transition: background .3s; }
+  .hw kbd { min-width: 64px; padding: 5px 7px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--sunken); color: var(--text-2); font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
+  .hw.flash { background: var(--accent-soft); }
+  .muted { color: var(--muted); font-size: 12.5px; }
+
+  .summary { color: var(--muted); font-size: 12.5px; text-align: center; }
+  .progress { height: 6px; overflow: hidden; border-radius: 999px; background: var(--sunken); }
+  .progress > div { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .4s linear; }
+  .progress.indet > div { width: 35%; animation: indet 1.2s ease-in-out infinite; }
+  @keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  .jobtext { color: var(--text-2); font-size: 12.5px; text-align: center; }
+
+  /* ---- gallery */
+  .section-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .section-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .section-head .btn { margin-left: auto; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 18px 16px; padding: 20px; }
+  .gallery:empty { display: none; }
+  .gallery-empty { display: grid; justify-items: center; gap: 8px; padding: 36px 20px; color: var(--muted); }
+  .gallery-empty .ic { width: 32px; height: 32px; stroke-width: 1.5; color: var(--line-strong); }
+  .item { position: relative; display: grid; gap: 8px; margin: 0; }
+  .item .thumb { display: block; aspect-ratio: 3 / 4; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunken); transition: box-shadow .15s, transform .15s, border-color .15s; }
+  .item .thumb:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .item img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .item .ph { display: grid; place-items: center; width: 100%; height: 100%; color: var(--muted); }
+  .item .ph .ic { width: 30px; height: 30px; stroke-width: 1.5; }
+  .item.on .thumb { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .item.fresh .thumb { animation: pop .5s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(.94); } }
+  .pick { position: absolute; top: 8px; left: 8px; display: grid; place-items: center; width: 26px; height: 26px; border: 1.5px solid var(--line-strong); border-radius: 50%; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--on-accent); font-size: 12px; font-weight: 700; box-shadow: var(--shadow-sm); cursor: pointer; }
+  .pick input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .pick:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .item.on .pick { border-color: var(--accent); background: var(--accent); }
+  .item figcaption { display: grid; gap: 1px; font-size: 12.5px; }
+  .item figcaption b { font-weight: 600; }
+  .item figcaption span { color: var(--muted); }
+
+  .selbar { position: fixed; left: 50%; bottom: 20px; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: var(--text); color: var(--bg); box-shadow: var(--shadow-lg); transform: translateX(-50%); white-space: nowrap; }
+  .selbar .btn { border-radius: 999px; }
+  .selbar .btn.ghost { color: var(--bg); }
+  .selbar .btn.ghost:hover { background: color-mix(in srgb, var(--bg) 15%, transparent); }
+  #toast { position: fixed; left: 50%; bottom: 20px; z-index: 30; display: flex; align-items: center; gap: 10px; max-width: min(520px, calc(100% - 32px)); padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font-weight: 500; box-shadow: var(--shadow-lg); opacity: 0; transform: translate(-50%, 12px); pointer-events: none; transition: opacity .2s, transform .2s; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast .ic { color: var(--ok); }
+  #toast.err .ic { color: var(--danger); }
+  body.has-sel #toast { bottom: 84px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>ScanRevive</h1>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-files" viewBox="0 0 24 24"><path d="M16 2H9a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V6z"/><path d="M16 2v4h4"/><path d="M4 7v13a2 2 0 0 0 2 2h9"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="8" width="28" height="18" rx="5" fill="var(--accent)"/><rect x="6" y="15" width="20" height="2.5" rx="1.25" fill="var(--on-accent)"/><circle cx="25" cy="21.5" r="1.5" fill="var(--on-accent)" opacity=".7"/></svg>
+    ScanRevive
+  </div>
   <select id="devices" aria-label="Scanner" hidden></select>
-  <span id="conn" role="status">Connecting…</span>
+  <div id="status" class="status" role="status"><span class="dot"></span><span id="statustext">…</span></div>
 </header>
-<main>
-  <aside>
-    <div class="actions">
-      <button id="preview" disabled>Preview</button>
-      <button id="scan" class="primary" disabled>Scan</button>
-      <button id="cancel" disabled>Cancel</button>
+
+<main class="layout">
+  <section class="card stage-card">
+    <div class="stage-bar">
+      <button id="preview" class="btn" disabled><svg class="ic"><use href="#i-eye"/></svg><span data-t="preview"></span></button>
+      <button id="full" class="btn ghost" hidden><svg class="ic"><use href="#i-expand"/></svg><span data-t="wholeGlass"></span></button>
+      <span id="area" class="chip" hidden></span>
     </div>
-    <div>
-      <progress id="progress" max="1" value="0" hidden></progress>
-      <div id="jobtext" class="muted" aria-live="polite"></div>
-    </div>
-    <div id="doc" class="docbox" hidden>
-      <div id="doccount" aria-live="polite"></div>
-      <div class="bar">
-        <button id="docfinish" class="primary">Finish PDF</button>
-        <button id="docundo">Remove last page</button>
-        <button id="docdiscard">Discard</button>
+    <div class="stage-wrap">
+      <div id="stage" class="blank">
+        <img id="pv" alt="">
+        <div id="empty" class="empty">
+          <svg class="ic"><use href="#i-file"/></svg>
+          <b data-t="emptyTitle"></b>
+          <span data-t="emptyText"></span>
+        </div>
+        <div id="sel" hidden><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+        <div id="sweep" hidden></div>
       </div>
     </div>
-    <fieldset>
-      <legend>Output</legend>
-      <div class="row">
-        <label for="format">File format</label>
-        <select id="format">
-          <option value="png">PNG (lossless)</option>
-          <option value="jpeg">JPEG (small files, photos)</option>
-          <option value="tiff">TIFF (archival)</option>
-          <option value="pdf">PDF (documents)</option>
-          <option value="document">PDF, multi-page (scan pages one by one)</option>
-        </select>
-      </div>
-      <div class="row" id="qrow">
-        <label for="quality">Quality: <span id="qval">85</span></label>
-        <input type="range" id="quality" min="30" max="100" value="85">
-      </div>
-    </fieldset>
-    <div id="options"></div>
-    <label class="row check"><input type="checkbox" id="adv"> <span>Show advanced options</span></label>
-    <fieldset id="hwbox" hidden><legend>Buttons on the scanner</legend><div id="hw"></div></fieldset>
+    <div class="stage-foot"><svg class="ic"><use href="#i-scan"/></svg><span data-t="dragHint"></span></div>
+  </section>
+
+  <aside class="card panel">
+    <div class="panel-body">
+      <section class="group" id="g-mode" hidden>
+        <div class="group-head"><h3 data-t="color"></h3></div>
+        <div id="modes" class="seg"></div>
+      </section>
+      <section class="group" id="g-res" hidden>
+        <div class="group-head"><h3 data-t="resolution"></h3><span id="reshint" class="hint"></span></div>
+        <div class="res-row"><div id="res" class="seg"></div><select id="resmore" aria-label="Resolution"></select></div>
+      </section>
+      <section class="group">
+        <div class="group-head"><h3 data-t="saveAs"></h3></div>
+        <div id="formats" class="choices" role="radiogroup"></div>
+        <div id="qrow" class="quality">
+          <label for="quality" data-t="quality"></label>
+          <input type="range" id="quality" min="30" max="100" value="85">
+          <div class="scale"><span data-t="smaller"></span><span data-t="better"></span></div>
+        </div>
+      </section>
+      <details class="more">
+        <summary><svg class="ic"><use href="#i-sliders"/></svg><span data-t="more"></span><svg class="ic"><use href="#i-chevron"/></svg></summary>
+        <div class="more-body">
+          <div id="options" class="more-body"></div>
+          <label class="switch-row"><input type="checkbox" id="adv"><span data-t="expert"></span></label>
+        </div>
+      </details>
+      <details class="more" id="hwbox" hidden>
+        <summary><svg class="ic"><use href="#i-keys"/></svg><span data-t="buttons"></span><svg class="ic"><use href="#i-chevron"/></svg></summary>
+        <div class="more-body"><span class="muted" data-t="buttonsHint"></span><div id="hw"></div></div>
+      </details>
+    </div>
+    <div class="panel-foot">
+      <section id="doc" class="doc" hidden>
+        <div><b id="doccount"></b><p id="dochint"></p></div>
+        <div id="docpages" class="docpages"></div>
+        <div id="docactions" class="doc-actions">
+          <button id="docfinish" class="btn primary sm"><svg class="ic"><use href="#i-check"/></svg><span data-t="finish"></span></button>
+          <button id="docundo" class="btn sm"><svg class="ic"><use href="#i-undo"/></svg><span data-t="removeLast"></span></button>
+          <button id="docdiscard" class="btn ghost sm danger"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+      </section>
+      <div id="summary" class="summary"></div>
+      <button id="scan" class="btn primary big" disabled><svg class="ic"><use href="#i-scan"/></svg><span id="scanlabel"></span></button>
+      <button id="cancel" class="btn big" hidden><svg class="ic"><use href="#i-x"/></svg><span data-t="cancel"></span></button>
+      <div id="progress" class="progress" hidden><div></div></div>
+      <div id="jobtext" class="jobtext" aria-live="polite"></div>
+    </div>
   </aside>
-  <section id="work">
-    <div class="bar">
-      <h2>Scan area</h2><span id="area" class="muted"></span>
-      <button id="full" class="end" hidden>Select whole glass</button>
+
+  <section class="card gallery-card">
+    <div class="section-head">
+      <h2 data-t="yourScans"></h2><span id="outdir" class="muted"></span>
+      <button id="folder" class="btn sm"><svg class="ic"><use href="#i-folder"/></svg><span data-t="openFolder"></span></button>
     </div>
-    <div id="stage">
-      <img id="pv" alt="Preview of the scanner glass">
-      <div id="hint"><span>Press <b>Preview</b>, then drag to choose the area to scan.</span></div>
-      <div id="sel" hidden></div>
-    </div>
-    <div class="bar">
-      <h2>Scans</h2><span id="outdir" class="muted"></span>
-      <span class="bar end">
-        <button id="pdf" disabled title="Pages follow the order in which you tick them">Combine selected into PDF</button>
-        <button id="folder">Open folder</button>
-      </span>
-    </div>
-    <div id="gallery"></div>
+    <div id="gallery" class="gallery"></div>
+    <div id="gallery-empty" class="gallery-empty" hidden><svg class="ic"><use href="#i-image"/></svg><span data-t="noScans"></span></div>
   </section>
 </main>
+
+<div id="selbar" class="selbar" hidden>
+  <span id="selcount"></span>
+  <button id="pdf" class="btn primary sm"><svg class="ic"><use href="#i-merge"/></svg><span data-t="combine"></span></button>
+  <button id="selclear" class="btn ghost sm" data-t="clear"></button>
+</div>
 <div id="toast" role="alert"></div>
+
 <script>
+// ---------------------------------------------------------------- text (add a language by adding one block)
+
+const I18N = {
+  en: {
+    preview: "Preview", wholeGlass: "Whole glass", dragHint: "Drag on the preview to choose what to scan.",
+    emptyTitle: "Put your document face down on the glass", emptyText: "Then press Preview to see it here.",
+    color: "Color", resolution: "Resolution", other: "Other…", saveAs: "Save as",
+    quality: "Quality", smaller: "Smaller file", better: "Better quality",
+    more: "More settings", expert: "Show expert options", options: "Options",
+    buttons: "Scanner buttons", buttonsHint: "They work while ScanRevive is open.",
+    scan: "Scan", scanPage: "Scan page {n}", cancel: "Cancel",
+    yourScans: "Your scans", openFolder: "Open folder", noScans: "Your scans will appear here.", savedIn: "Saved in {d}",
+    select: "Select", selOne: "1 selected", selMany: "{n} selected", combine: "Combine into one PDF", clear: "Clear",
+    ready: "Ready", looking: "Looking for the scanner…", offline: "ScanRevive is not running",
+    warming: "Warming up and calibrating…", scanning: "Scanning… {p}%", previewing: "Previewing… {p}%",
+    saved: "Saved {f}", pageAdded: "Page {n} added. Put the next page on the glass.", cancelled: "Cancelled",
+    btnPressed: "{b} button pressed on the scanner",
+    docTitle: "Multi-page PDF", docOne: "1 page so far", docMany: "{n} pages so far",
+    docEmpty: "Put page 1 on the glass and press Scan, or SCAN on the scanner.",
+    docNext: "Put the next page on the glass. When you're done, press Finish PDF.",
+    finish: "Finish PDF", removeLast: "Remove last", discard: "Discard", discardConfirm: "Discard all pages of this PDF?",
+    pageN: "Page {n}", document: "Document",
+    f_pdf: "PDF", fd_pdf: "One page, for documents", f_document: "Multi-page PDF", fd_document: "Several pages in one file",
+    f_jpeg: "JPEG", fd_jpeg: "Small files, for photos", f_png: "PNG", fd_png: "Lossless quality", f_tiff: "TIFF", fd_tiff: "For archiving",
+    mode_Color: "Color", mode_Gray: "Grayscale", mode_Lineart: "Black & white", mode_Halftone: "Halftone",
+    res_low: "Quick, for the screen", res_doc: "Ideal for documents", res_photo: "Ideal for photos", res_high: "Small originals – slow",
+    hw_scan: "Scan with the current settings", hw_file: "Scan to PDF", hw_pdf: "Scan to PDF",
+    hw_email: "Scan and attach to a new email", hw_copy: "Scan and print (photocopy)",
+  },
+  it: {
+    preview: "Anteprima", wholeGlass: "Tutto il vetro", dragHint: "Trascina sull'anteprima per scegliere cosa scansionare.",
+    emptyTitle: "Appoggia il documento sul vetro, a faccia in giù", emptyText: "Poi premi Anteprima per vederlo qui.",
+    color: "Colore", resolution: "Risoluzione", other: "Altro…", saveAs: "Salva come",
+    quality: "Qualità", smaller: "File più piccolo", better: "Qualità migliore",
+    more: "Altre impostazioni", expert: "Mostra opzioni per esperti", options: "Opzioni",
+    buttons: "Tasti dello scanner", buttonsHint: "Funzionano mentre ScanRevive è aperto.",
+    scan: "Scansiona", scanPage: "Scansiona pagina {n}", cancel: "Annulla",
+    yourScans: "Le tue scansioni", openFolder: "Apri cartella", noScans: "Qui compariranno le tue scansioni.", savedIn: "Salvate in {d}",
+    select: "Seleziona", selOne: "1 selezionata", selMany: "{n} selezionate", combine: "Unisci in un PDF", clear: "Deseleziona",
+    ready: "Pronto", looking: "Cerco lo scanner…", offline: "ScanRevive non è in esecuzione",
+    warming: "Riscaldamento e calibrazione…", scanning: "Scansione… {p}%", previewing: "Anteprima… {p}%",
+    saved: "Salvato {f}", pageAdded: "Pagina {n} aggiunta. Metti la pagina successiva sul vetro.", cancelled: "Annullato",
+    btnPressed: "Premuto il tasto {b} sullo scanner",
+    docTitle: "PDF multipagina", docOne: "1 pagina finora", docMany: "{n} pagine finora",
+    docEmpty: "Metti la pagina 1 sul vetro e premi Scansiona, oppure SCAN sullo scanner.",
+    docNext: "Metti la pagina successiva sul vetro. Quando hai finito, premi Crea PDF.",
+    finish: "Crea PDF", removeLast: "Togli l'ultima", discard: "Elimina", discardConfirm: "Eliminare tutte le pagine di questo PDF?",
+    pageN: "Pagina {n}", document: "Documento",
+    f_pdf: "PDF", fd_pdf: "Una pagina, per documenti", f_document: "PDF multipagina", fd_document: "Più pagine in un unico file",
+    f_jpeg: "JPEG", fd_jpeg: "File leggeri, per foto", f_png: "PNG", fd_png: "Qualità senza perdite", f_tiff: "TIFF", fd_tiff: "Per l'archiviazione",
+    mode_Color: "Colori", mode_Gray: "Grigi", mode_Lineart: "Bianco e nero", mode_Halftone: "Retino",
+    res_low: "Veloce, per lo schermo", res_doc: "Ideale per documenti", res_photo: "Ideale per foto", res_high: "Originali piccoli – lenta",
+    hw_scan: "Scansiona con le impostazioni attuali", hw_file: "Scansiona in PDF", hw_pdf: "Scansiona in PDF",
+    hw_email: "Scansiona e allega a una nuova email", hw_copy: "Scansiona e stampa (fotocopia)",
+  },
+};
+const LANG = (navigator.language || "en").toLowerCase().split("-")[0];
+const S = Object.assign({}, I18N.en, I18N[LANG]);
+const t = (key, vars = {}) => (S[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+document.documentElement.lang = I18N[LANG] ? LANG : "en";
+document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+
+// ---------------------------------------------------------------- helpers
+
 const $ = s => document.querySelector(s);
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+const icon = id => {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("class", "ic");
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = `<use href="#${id}"/>`;
+  return s;
+};
 const store = {
   get: k => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
 };
-const round = v => typeof v === "number" ? Math.round(v * 100) / 100 : v;
+const round = v => typeof v === "number" ? Math.round(v * 10) / 10 : v;
 
 async function api(path, body) {
   const init = body === undefined ? undefined : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
@@ -156,18 +412,19 @@ async function api(path, body) {
 
 let toastTimer;
 function toast(msg, err = false) {
-  const t = $("#toast");
-  t.textContent = msg;
-  t.className = "show" + (err ? " err" : "");
+  const box = $("#toast");
+  box.replaceChildren(icon(err ? "i-alert" : "i-check"), el("span", { textContent: msg }));
+  box.className = "show" + (err ? " err" : "");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = "", err ? 7000 : 3000);
+  toastTimer = setTimeout(() => box.className = err ? "err" : "", err ? 7000 : 3200);
 }
 const fail = e => toast(e.message, true);
 
-// ---------------------------------------------------------------- scanner options (generated from what the driver reports)
+// ---------------------------------------------------------------- scanner options
 
 let opts = [];
 const opt = name => opts.find(o => o.name === name && o.active);
+const SIMPLE = new Set(["mode", "resolution", "preview"]);  // shown as friendly controls, not in "More settings"
 
 async function loadOptions() {
   try { opts = (await api("/api/options")).options; } catch (e) { fail(e); }
@@ -177,30 +434,50 @@ async function setOpts(values) {
   try { opts = (await api("/api/options", { values })).options; } catch (e) { fail(e); }
   render();
 }
+function render() { renderSimple(); renderMore(); renderButtons(); drawArea(); renderSummary(); }
 
-function render() {
+const seg = (items, pick) => items.map(([label, value, on]) =>
+  el("button", { type: "button", className: "seg-btn" + (on ? " on" : ""), textContent: label, ariaPressed: String(on), onclick: () => pick(value) }));
+
+function renderSimple() {
+  const mode = opt("mode");
+  $("#g-mode").hidden = !(mode && mode.list && mode.list.length > 1 && mode.settable);
+  if (!$("#g-mode").hidden)
+    $("#modes").replaceChildren(...seg(mode.list.map(v => [S["mode_" + v] || v, v, v === mode.value]), v => setOpts({ mode: v })));
+
+  const res = opt("resolution");
+  $("#g-res").hidden = !res;
+  if (!res) return;
+  const all = res.list ? [...res.list].sort((a, b) => a - b) : null;
+  const common = [150, 300, 600, 1200].filter(v => all ? all.includes(v) : res.range && v >= res.range[0] && v <= res.range[1]);
+  $("#res").replaceChildren(...seg(common.map(v => [String(v), v, v == res.value]), v => setOpts({ resolution: v })));
+  const more = $("#resmore"), custom = !common.includes(res.value);
+  more.hidden = !all || all.every(v => common.includes(v));
+  if (all) more.replaceChildren(el("option", { value: "", textContent: t("other"), disabled: true, selected: !custom }),
+    ...all.map(v => el("option", { value: v, textContent: v + " dpi", selected: custom && v == res.value })));
+  more.classList.toggle("on", custom);
+  $("#reshint").textContent = t(res.value <= 150 ? "res_low" : res.value <= 300 ? "res_doc" : res.value <= 600 ? "res_photo" : "res_high");
+}
+$("#resmore").onchange = () => setOpts({ resolution: +$("#resmore").value });
+
+function renderMore() {
   const adv = $("#adv").checked, groups = new Map();
   for (const o of opts) {
-    if (!o.active || o.hardware || (o.advanced && !adv)) continue;
+    if (!o.active || o.hardware || SIMPLE.has(o.name) || (o.advanced && !adv) || (o.list && o.list.length < 2)) continue;
     if (!groups.has(o.group)) groups.set(o.group, []);
     groups.get(o.group).push(o);
   }
   $("#options").replaceChildren(...[...groups].map(([g, list]) =>
-    el("fieldset", {}, el("legend", { textContent: g || "Options" }), ...list.map(widget))));
-  const hw = opts.filter(o => o.hardware && o.type === "bool");
-  $("#hwbox").hidden = !hw.length;
-  $("#hw").replaceChildren(...hw.map(o =>
-    el("div", { className: "hw", id: "hw-" + o.name }, el("b", { textContent: o.title }), el("span", { className: "muted", textContent: o.action }))));
-  drawArea();
+    el("section", { className: "subgroup" }, el("h4", { textContent: g || t("options") }), ...list.map(widget))));
 }
 
 function widget(o) {
   const id = "opt-" + o.name, set = v => setOpts({ [o.name]: v });
   const label = el("label", { htmlFor: id, textContent: o.title + (o.unit ? ` (${o.unit})` : "") });
-  const row = el("div", { className: "row", title: o.desc });
+  const row = el("div", { className: "field", title: o.desc });
   let input;
   if (o.type === "button") {
-    return el("button", { type: "button", textContent: o.title, title: o.desc, disabled: !o.settable, onclick: () => set(null) });
+    return el("button", { type: "button", className: "btn sm", textContent: o.title, title: o.desc, disabled: !o.settable, onclick: () => set(null) });
   } else if (o.count > 1) {
     // Value arrays (gamma tables): edited through one gamma exponent.
     const [lo, hi] = o.range || [0, 255];
@@ -210,7 +487,7 @@ function widget(o) {
   } else if (o.type === "bool") {
     input = el("input", { type: "checkbox", id, checked: !!o.value, disabled: !o.settable });
     input.onchange = () => set(input.checked);
-    row.className = "row check";
+    row.className = "field check";
     row.append(input, label);
     return row;
   } else if (o.list) {
@@ -239,6 +516,20 @@ function widget(o) {
   return row;
 }
 
+const KEYCAPS = { scan: "SCAN", file: "PDF", pdf: "PDF", email: "E-MAIL", copy: "COPY" };
+function renderButtons() {
+  const hw = opts.filter(o => o.hardware && o.type === "bool");
+  $("#hwbox").hidden = !hw.length;
+  $("#hw").replaceChildren(...hw.map(o => el("div", { className: "hw", id: "hw-" + o.name },
+    el("kbd", { textContent: KEYCAPS[o.name] || o.title }), el("span", { textContent: S["hw_" + o.name] || o.action }))));
+}
+
+function renderSummary() {
+  const mode = opt("mode"), res = opt("resolution");
+  $("#summary").textContent = [mode && (S["mode_" + mode.value] || mode.value), res && `${res.value} dpi`, t("f_" + format())]
+    .filter(Boolean).join("  ·  ");
+}
+
 // ---------------------------------------------------------------- scan area: drag on the preview
 
 const stage = $("#stage");
@@ -247,19 +538,22 @@ function bounds() {
   if (!(tx && ty && bx && by && tx.range && ty.range && bx.range && by.range)) return null;
   return { x0: tx.range[0], x1: bx.range[1], y0: ty.range[0], y1: by.range[1], v: [tx.value, ty.value, bx.value, by.value], unit: tx.unit };
 }
+const fractions = b => {
+  const W = b.x1 - b.x0, H = b.y1 - b.y0, [l, top, r, d] = b.v;
+  return [(l - b.x0) / W, (top - b.y0) / H, (r - b.x0) / W, (d - b.y0) / H];
+};
 function paint([a, b, c, d]) {
   Object.assign($("#sel").style, { left: a * 100 + "%", top: b * 100 + "%", width: (c - a) * 100 + "%", height: (d - b) * 100 + "%" });
 }
 function drawArea() {
   const b = bounds();
-  $("#full").hidden = $("#sel").hidden = !b;
-  if (!b) return void ($("#area").textContent = "");
-  const W = b.x1 - b.x0, H = b.y1 - b.y0, [l, t, r, d] = b.v;
-  stage.style.setProperty("--ar", W / H);
-  paint([(l - b.x0) / W, (t - b.y0) / H, (r - b.x0) / W, (d - b.y0) / H]);
-  const res = (opt("resolution") || {}).value, mm = b.unit === "mm";
-  $("#area").textContent = `${round(r - l)} × ${round(d - t)} ${b.unit}` +
-    (res && mm ? ` · ${Math.round((r - l) / 25.4 * res)} × ${Math.round((d - t) / 25.4 * res)} px at ${res} dpi` : "");
+  $("#full").hidden = $("#sel").hidden = $("#area").hidden = !b;
+  if (!b) return;
+  stage.style.setProperty("--ar", (b.x1 - b.x0) / (b.y1 - b.y0));
+  paint(fractions(b));
+  const [l, top, r, d] = b.v, res = (opt("resolution") || {}).value;
+  $("#area").textContent = `${round(r - l)} × ${round(d - top)} ${b.unit}` +
+    (res && b.unit === "mm" ? `  ·  ${Math.round((r - l) / 25.4 * res)} × ${Math.round((d - top) / 25.4 * res)} px` : "");
 }
 
 let drag = null;
@@ -284,135 +578,181 @@ stage.onpointerup = e => {
 };
 $("#full").onclick = () => { const b = bounds(); setOpts({ "tl-x": b.x0, "tl-y": b.y0, "br-x": b.x1, "br-y": b.y1 }); };
 
-// ---------------------------------------------------------------- saved scans
-
-let picked = [], badges = new Map();
-async function loadScans() {
-  const { scans } = await api("/api/scans").catch(() => ({ scans: [] }));
-  picked = picked.filter(n => scans.some(s => s.name === n));
-  badges = new Map();
-  $("#gallery").replaceChildren(...scans.map(f => {
-    const url = encodeURIComponent(f.name), badge = el("b", { className: "order" });
-    const box = el("input", { type: "checkbox", checked: picked.includes(f.name), ariaLabel: "Select " + f.name });
-    badges.set(f.name, badge);
-    box.onchange = () => { picked = box.checked ? [...picked, f.name] : picked.filter(n => n !== f.name); updatePdfButton(); };
-    const img = el("img", { src: "/thumbs/" + url, alt: f.name, loading: "lazy" });
-    img.onerror = () => img.replaceWith(el("div", { className: "file", textContent: f.name.split(".").pop().toUpperCase() }));
-    return el("figure", {}, el("a", { href: "/scans/" + url, target: "_blank", rel: "noopener" }, img),
-      el("figcaption", {}, box, badge, el("span", { textContent: f.name })));
-  }));
-  updatePdfButton();
-}
-function updatePdfButton() {
-  for (const [name, badge] of badges) badge.textContent = picked.includes(name) ? picked.indexOf(name) + 1 : "";
-  $("#pdf").disabled = !picked.length;
-  $("#pdf").textContent = picked.length ? `Combine ${picked.length} selected into one PDF` : "Combine selected into PDF";
+// The "scanning light" moves over the area being scanned, like the real lamp.
+function showSweep(job) {
+  const running = job.state === "running", b = bounds();
+  const r = job.kind === "scan" && b ? fractions(b) : [0, 0, 1, 1], p = job.progress || 0;
+  stage.classList.toggle("warming", running && !p);
+  $("#sweep").hidden = !running || !p;
+  Object.assign($("#sweep").style, { left: r[0] * 100 + "%", width: (r[2] - r[0]) * 100 + "%", top: (r[1] + (r[3] - r[1]) * p) * 100 + "%" });
 }
 
-// ---------------------------------------------------------------- actions
+// ---------------------------------------------------------------- output format
 
-const output = () => ({ format: $("#format").value, quality: +$("#quality").value });
-const saveOutput = () => {
-  store.set("format", $("#format").value);
+const FORMATS = [["pdf", "i-file"], ["document", "i-files"], ["jpeg", "i-image"], ["png", "i-image"], ["tiff", "i-archive"]];
+$("#formats").replaceChildren(...FORMATS.map(([f, ic]) => el("label", { className: "choice" },
+  el("input", { type: "radio", name: "format", value: f, onchange: saveOutput }), icon(ic),
+  el("span", {}, el("b", { textContent: t("f_" + f) }), el("small", { textContent: t("fd_" + f) })),
+  el("span", { className: "tick" }))));
+const format = () => (document.querySelector("input[name=format]:checked") || {}).value || "pdf";
+const output = () => ({ format: format(), quality: +$("#quality").value });
+function saveOutput() {
+  store.set("format", format());
   store.set("quality", $("#quality").value);
-  $("#qval").textContent = $("#quality").value;
-  $("#qrow").hidden = !["jpeg", "pdf", "document"].includes($("#format").value);
+  $("#qrow").hidden = !["jpeg", "pdf", "document"].includes(format());
   api("/api/output", output()).catch(() => {});
   renderDoc();
-};
+  renderSummary();
+}
+const saved = document.querySelector(`input[name=format][value="${store.get("format") || "pdf"}"]`);
+(saved || document.querySelector("input[name=format]")).checked = true;
+$("#quality").value = store.get("quality") || 85;
+$("#quality").onchange = saveOutput;
 
-// Multi-page mode: every scan becomes the next page until "Finish PDF".
-let docPages = 0, busy = false;
+// ---------------------------------------------------------------- multi-page PDF
+
+let docPages = 0, docFiles = [], busy = false, docShown = null;
 function renderDoc() {
-  const on = $("#format").value === "document";
+  const on = format() === "document";
   $("#doc").hidden = !on && !docPages;
-  $("#doccount").textContent = docPages
-    ? `Multi-page PDF: ${docPages} page${docPages > 1 ? "s" : ""} so far.`
-    : "Multi-page PDF: put the first page on the glass and press Scan, or SCAN on the scanner.";
-  $("#docfinish").disabled = $("#docundo").disabled = $("#docdiscard").disabled = busy || !docPages;
-  $("#scan").textContent = on ? `Scan page ${docPages + 1}` : "Scan";
+  $("#doccount").textContent = !docPages ? t("docTitle") : docPages === 1 ? t("docOne") : t("docMany", { n: docPages });
+  $("#dochint").textContent = t(docPages ? "docNext" : "docEmpty");
+  $("#docactions").hidden = !docPages;
+  ["#docfinish", "#docundo", "#docdiscard"].forEach(s => $(s).disabled = busy);
+  $("#scanlabel").textContent = on ? t("scanPage", { n: docPages + 1 }) : t("scan");
+  const key = docFiles.join("|");
+  if (key === docShown) return;
+  docShown = key;
+  $("#docpages").replaceChildren(...docFiles.map((name, i) => el("figure", { className: "dp" },
+    el("img", { src: "/pages/" + encodeURIComponent(name), alt: t("pageN", { n: i + 1 }), decoding: "async" }), el("span", { textContent: i + 1 }))));
+  $("#docpages").scrollLeft = 1e6;
 }
 async function docAction(action) {
   try {
     const r = await api("/api/document", { action });
-    if (r.file) { toast("Saved " + r.file); loadScans(); }
+    if (r.file) { toast(t("saved", { f: r.file })); fresh = r.file; loadScans(); }
     docPages = r.file ? 0 : r.pages;
+    docFiles = docFiles.slice(0, docPages);
     renderDoc();
   } catch (e) { fail(e); }
 }
 $("#docfinish").onclick = () => docAction("finish");
 $("#docundo").onclick = () => docAction("undo");
-$("#docdiscard").onclick = () => { if (confirm("Discard all pages of this multi-page PDF?")) docAction("discard"); };
-$("#format").value = store.get("format") || "png";
-$("#quality").value = store.get("quality") || 85;
-$("#format").onchange = $("#quality").onchange = saveOutput;
-$("#quality").oninput = () => $("#qval").textContent = $("#quality").value;
-saveOutput();
+$("#docdiscard").title = $("#docdiscard").ariaLabel = t("discard");
+$("#docdiscard").onclick = () => { if (confirm(t("discardConfirm"))) docAction("discard"); };
+
+// ---------------------------------------------------------------- saved scans
+
+let picked = [], items = new Map(), fresh = null;
+const size = b => b >= 1e6 ? (b / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1e3)) + " KB";
+async function loadScans() {
+  const { scans } = await api("/api/scans").catch(() => ({ scans: [] }));
+  picked = picked.filter(n => scans.some(s => s.name === n));
+  items = new Map();
+  $("#gallery").replaceChildren(...scans.map(f => {
+    const url = encodeURIComponent(f.name), ext = f.name.split(".").pop().toUpperCase();
+    const when = new Date(f.mtime * 1000).toLocaleString(document.documentElement.lang, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    const box = el("input", { type: "checkbox", ariaLabel: `${t("select")} ${f.name}` });
+    box.onchange = () => { picked = box.checked ? [...picked, f.name] : picked.filter(n => n !== f.name); updatePicks(); };
+    const badge = el("span"), img = el("img", { src: "/thumbs/" + url, alt: "", loading: "lazy" });
+    img.onerror = () => img.replaceWith(el("span", { className: "ph" }, icon(ext === "PDF" ? "i-file" : "i-image")));
+    const item = el("figure", { className: "item" + (f.name === fresh ? " fresh" : ""), title: f.name },
+      el("a", { className: "thumb", href: "/scans/" + url, target: "_blank", rel: "noopener" }, img),
+      el("label", { className: "pick" }, box, badge),
+      el("figcaption", {}, el("b", { textContent: when }),
+        el("span", { textContent: [f.name.startsWith("document-") && t("document"), ext, size(f.size)].filter(Boolean).join(" · ") })));
+    items.set(f.name, { item, box, badge });
+    return item;
+  }));
+  fresh = null;
+  $("#gallery-empty").hidden = scans.length > 0;
+  updatePicks();
+}
+function updatePicks() {
+  for (const [name, { item, box, badge }] of items) {
+    const i = picked.indexOf(name);
+    box.checked = i >= 0;
+    item.classList.toggle("on", i >= 0);
+    badge.textContent = i >= 0 ? i + 1 : "";
+  }
+  $("#selbar").hidden = !picked.length;
+  document.body.classList.toggle("has-sel", picked.length > 0);
+  $("#selcount").textContent = picked.length === 1 ? t("selOne") : t("selMany", { n: picked.length });
+}
+$("#selclear").onclick = () => { picked = []; updatePicks(); };
+$("#pdf").onclick = async () => {
+  try {
+    const r = await api("/api/pdf", { files: picked, quality: +$("#quality").value });
+    toast(t("saved", { f: r.file }));
+    picked = [];
+    fresh = r.file;
+    loadScans();
+  } catch (e) { fail(e); }
+};
+
+// ---------------------------------------------------------------- actions and status
 
 $("#preview").onclick = () => api("/api/preview", {}).catch(fail);
 $("#scan").onclick = () => api("/api/scan", output()).catch(fail);
 $("#cancel").onclick = () => api("/api/cancel", {}).catch(fail);
 $("#folder").onclick = () => api("/api/open-folder", {}).catch(fail);
-$("#adv").onchange = render;
+$("#adv").onchange = renderMore;
 $("#devices").onchange = async () => {
   try { await api("/api/device", { name: $("#devices").value }); await loadOptions(); } catch (e) { fail(e); }
 };
-$("#pdf").onclick = async () => {
-  try {
-    const r = await api("/api/pdf", { files: picked, quality: +$("#quality").value });
-    toast("Saved " + r.file);
-    picked = [];
-    loadScans();
-  } catch (e) { fail(e); }
-};
 
-// ---------------------------------------------------------------- status polling
+function setStatus(kind, text) {
+  $("#status").className = "status " + kind;
+  $("#statustext").textContent = text;
+}
 
 let connected = null, seenJob = null, seenEvent = null;
 async function poll() {
   let s;
   try { s = await api("/api/state"); } catch {
-    $("#conn").className = "";
-    $("#conn").textContent = "ScanRevive is not running";
+    setStatus("off", t("offline"));
     $("#preview").disabled = $("#scan").disabled = true;
     return setTimeout(poll, 2000);
   }
-  $("#conn").className = s.connected ? "on" : "";
-  $("#conn").textContent = s.connected ? `${s.device.vendor} ${s.device.model}` : (s.error || "Looking for the scanner…");
-  $("#outdir").textContent = "Saved in " + s.outdir;
+  const j = s.job, running = j.state === "running", pct = Math.round((j.progress || 0) * 100);
+  const doing = running && (j.progress ? t(j.kind === "preview" ? "previewing" : "scanning", { p: pct }) : t("warming"));
+  if (!s.connected) setStatus("off", s.error || t("looking"));
+  else setStatus(running ? "busy" : "ready", running ? doing : `${s.device.vendor} ${s.device.model} · ${t("ready")}`);
+  $("#outdir").textContent = t("savedIn", { d: s.outdir });
+
   const devs = $("#devices");
   devs.hidden = s.devices.length < 2;
   if (!devs.hidden && devs.options.length !== s.devices.length)
     devs.replaceChildren(...s.devices.map(d => el("option", { value: d.name, textContent: d.label, selected: s.device && d.name === s.device.name })));
   if (s.connected !== connected) { connected = s.connected; if (connected) loadOptions(); }
 
-  const j = s.job, running = j.state === "running";
+  $("#preview").disabled = $("#scan").disabled = running || !s.connected;
+  $("#scan").hidden = running;
+  $("#cancel").hidden = !running;
+  $("#progress").hidden = !running;
+  $("#progress").classList.toggle("indet", running && !j.progress);
+  $("#progress > div").style.width = pct + "%";
+  $("#jobtext").textContent = doing || "";
+  showSweep(j);
   docPages = s.pages;
+  docFiles = s.page_files || [];
   busy = running;
   renderDoc();
-  $("#preview").disabled = $("#scan").disabled = running || !s.connected;
-  $("#cancel").disabled = !running;
-  const p = $("#progress");
-  p.hidden = !running;
-  if (running && j.progress == null) p.removeAttribute("value"); else p.value = j.progress || 0;
-  $("#jobtext").textContent = !running ? "" : j.progress
-    ? `${j.kind === "preview" ? "Previewing" : "Scanning"}… ${Math.round(j.progress * 100)}%`
-    : "Warming up the lamp and calibrating…";
 
   if (seenJob === null) seenJob = running ? j.id - 1 : j.id;
   if (!running && j.id > seenJob) {
     seenJob = j.id;
-    if (j.state === "done" && j.kind === "preview") { $("#pv").src = "/api/preview.png?" + j.id; $("#hint").hidden = true; }
+    if (j.state === "done" && j.kind === "preview") $("#pv").src = "/api/preview.png?" + j.id;
     if (j.state === "done" && j.kind === "scan") {
-      toast(j.page ? `Page ${j.page} added. Put the next page on the glass.` : "Saved " + j.file);
-      if (j.file) loadScans();
+      toast(j.page ? t("pageAdded", { n: j.page }) : t("saved", { f: j.file }));
+      if (j.file) { fresh = j.file; loadScans(); }
     }
     if (j.state === "error") { toast(j.error, true); loadScans(); }
-    if (j.state === "cancelled") toast("Cancelled");
+    if (j.state === "cancelled") toast(t("cancelled"));
   }
   for (const ev of s.events) {
     if (seenEvent !== null && ev.id > seenEvent) {
-      toast(`“${ev.button}” button pressed on the scanner`);
+      toast(t("btnPressed", { b: KEYCAPS[ev.button] || ev.button }));
       const row = document.getElementById("hw-" + ev.button);
       if (row) { row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1500); }
     }
@@ -421,6 +761,12 @@ async function poll() {
   setTimeout(poll, running ? 400 : 1000);
 }
 
+// The last preview survives a page reload: the server keeps it until the next one.
+$("#pv").onload = () => { stage.classList.remove("blank"); $("#empty").hidden = true; };
+$("#pv").onerror = () => $("#pv").removeAttribute("src");
+$("#pv").src = "/api/preview.png";
+
+saveOutput();
 poll();
 loadScans();
 </script>

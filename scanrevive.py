@@ -302,7 +302,7 @@ def scan_path(name):
 def list_scans():
     files = [p for p in OUT.iterdir() if p.suffix.lower() in EXTS and not p.name.startswith(".")]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    return [{"name": p.name, "size": p.stat().st_size} for p in files]
+    return [{"name": p.name, "size": p.stat().st_size, "mtime": p.stat().st_mtime} for p in files]
 
 
 def thumbnail(name):
@@ -668,7 +668,7 @@ class Scanner:
                 "devices": [{"name": d["name"], "label": f"{d['vendor']} {d['model']}"} for d in self.devices],
                 "job": dict(self.job), "events": self.events[-10:],
                 "outdir": str(OUT).replace(str(Path.home()), "~", 1), "format": self.last_format,
-                "pages": len(pending_pages())}
+                "pages": len(pending_pages()), "page_files": [p.name for p in pending_pages()]}
 
 
 # ---------------------------------------------------------------- web server
@@ -732,6 +732,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._guard(lambda: self._file(scan_path(path[7:])))
         if path.startswith("/thumbs/"):
             return self._guard(lambda: self._file(thumbnail(path[8:])))
+        if path.startswith("/pages/"):  # pages of the multi-page PDF being built
+            return self._guard(lambda: self._file(next((p for p in pending_pages() if p.name == path[7:]), None)))
         self._send(404, {"error": "Not found"})
 
     def do_POST(self):

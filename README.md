@@ -19,12 +19,12 @@ ScanRevive brings them back with a simple web page that runs on your own Mac. Yo
 - **Preview and crop**: scan the whole glass at low resolution, then drag to choose the area.
 - **All scanner settings**: color or gray, 75 to 4800 dpi, 8 or 16-bit, brightness, contrast, gamma, lamp timer, calibration. The controls are built from what the scanner reports, so nothing is hidden.
 - **PNG, JPEG, TIFF and PDF** output. PDFs keep the real paper size, so an A4 page stays A4.
-- **Multi-page PDF**: choose *PDF, multi-page*, scan the pages one by one from the page or with the scanner's SCAN button, then press **Finish PDF**. You can also combine scans and PDFs you already have into one document.
+- **Multi-page PDF**: choose **Multi-page PDF**, scan the pages one by one from the page or with the scanner's SCAN button, then press **Finish PDF**. You can also combine scans and PDFs you already have into one document.
 - **The scanner's own buttons work** (LiDE 110: COPY, SCAN, PDF, E-MAIL). See [Scanner buttons](#scanner-buttons).
 - **Robust**: reconnects by itself when the scanner is unplugged or changes USB address, retries once after a USB hiccup, and a scan is never lost when a conversion fails.
 - **Private**: everything stays on your computer. There is no telemetry and no cloud. By default only your own Mac can open the page.
 - **Tiny**: one Python file and one HTML file. There is no pip, npm or build step.
-- Works on phones and tablets too, when you [enable network access](#scan-from-your-phone-or-another-computer).
+- **Clear, modern interface** in English and Italian, with light and dark mode. It also works on phones and tablets when you [enable network access](#scan-from-your-phone-or-another-computer).
 
 ## Requirements
 
@@ -59,8 +59,8 @@ Your browser opens **http://localhost:8110**. Then:
 |---|---|
 | **Start ScanRevive** | Double-click **`ScanRevive.command`** in the `ScanRevive` folder in your home folder. A Terminal window opens and the page appears in your browser. Keep the Terminal window open while you scan. |
 | **Scan one page** | Put it face down on the glass, press **Preview**, drag a box around it, choose the file format and press **Scan**. It appears under **Scans**. Click it to open it. |
-| **Make a PDF of several pages** | Choose **PDF, multi-page** as the file format. Press **Scan page 1**, put the next page on the glass, press **Scan page 2**, and so on. The SCAN button on the scanner works too. At the end press **Finish PDF**. If a page comes out wrong, press **Remove last page** and scan it again. |
-| **Combine scans you already have** | Under **Scans**, tick them in order. A number shows each page's position. Then press **Combine … into one PDF**. |
+| **Make a PDF of several pages** | Under **Save as**, choose **Multi-page PDF**. Press **Scan page 1**, put the next page on the glass, press **Scan page 2**, and so on. The SCAN button on the scanner works too. At the end press **Finish PDF**. If a page comes out wrong, press **Remove last** and scan it again. |
+| **Combine scans you already have** | Under **Your scans**, tick the round box on each one in page order. A number shows each page's position. Then press **Combine into one PDF**. |
 | **Scan without touching the computer** | Press a [button on the scanner](#scanner-buttons). |
 | **Find your files** | Press **Open folder**, or in Finder go to **Pictures → ScanRevive**. |
 | **Stop ScanRevive** | Close the Terminal window. |
@@ -160,7 +160,7 @@ Then open `http://<your-mac-name>.local:8110` on any device in the same network.
 | "No scanner found" | Check the cable, then run `scanimage -L`. The LiDE is powered over USB, so plug it straight into the Mac or into a powered hub. |
 | "Error during device I/O" | Unplug the scanner and plug it back in. ScanRevive reconnects within a few seconds. |
 | "The scanner is busy" | Another program, or a second ScanRevive window started from Terminal, is using it. Close that program. |
-| Stripes or odd colors | Tick **Show advanced options**, then press **Clear calibration cache** or **Force calibration**. |
+| Stripes or odd colors | Open **More settings**, tick **Show expert options**, then press **Clear calibration cache** or **Force calibration**. |
 | Port 8110 already in use | Start with `--port 8111`. |
 | JPEG, TIFF or PDF fail on Linux | The conversions use `sips`, which is built into macOS. On Linux, use PNG. |
 
@@ -214,7 +214,7 @@ What was missing on modern macOS was an easy way to use it. ScanRevive talks to 
 Contributions are welcome, especially:
 
 - **Reports for other scanner models**, working or not, through the [scanner report form](../../issues/new?template=scanner-report.yml).
-- **Translations** of this README.
+- **Translations** of this README and of the interface. The interface is in English and Italian. To add a language, copy the `en` block at the top of the script in `index.html` and translate it.
 - Bug fixes. Please keep the project free of dependencies: Python standard library only.
 
 Before sending a change, run `python3 scanrevive.py --selftest`.
