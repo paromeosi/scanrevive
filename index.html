@@ -47,6 +47,15 @@
   .status.ready .dot { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
   .status.busy .dot { background: var(--accent); animation: pulse 1.1s ease-in-out infinite; }
   @keyframes pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent); } }
+  #quit { height: 32px; }
+  @media (max-width: 560px) { #quit span { display: none; } }
+
+  /* ---- closed */
+  .closed { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); text-align: center; }
+  .closed > div { display: grid; justify-items: center; gap: 10px; max-width: 400px; padding: 32px 28px; }
+  .closed svg { width: 64px; height: 64px; margin-bottom: 6px; }
+  .closed h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .closed p { margin: 0; color: var(--text-2); line-height: 1.5; }
 
   /* ---- layout */
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-areas: "stage panel" "gallery panel"; gap: 24px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 24px; }
@@ -222,6 +231,7 @@
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
   <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
   <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
   <symbol id="i-merge" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></symbol>
 </svg>
 
@@ -232,7 +242,16 @@
   </div>
   <select id="devices" aria-label="Scanner" hidden></select>
   <div id="status" class="status" role="status"><span class="dot"></span><span id="statustext">…</span></div>
+  <button id="quit" class="btn sm ghost"><svg class="ic"><use href="#i-power"/></svg><span data-t="close"></span></button>
 </header>
+
+<div id="closed" class="closed" hidden>
+  <div>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="8" width="28" height="18" rx="5" fill="var(--line-strong)"/><rect x="6" y="15" width="20" height="2.5" rx="1.25" fill="var(--surface)"/></svg>
+    <h2 data-t="closedTitle"></h2>
+    <p data-t="closedText"></p>
+  </div>
+</div>
 
 <main class="layout">
   <section class="card stage-card">
@@ -336,7 +355,9 @@ const I18N = {
     scan: "Scan", scanPage: "Scan page {n}", cancel: "Cancel",
     yourScans: "Your scans", openFolder: "Open folder", noScans: "Your scans will appear here.", savedIn: "Saved in {d}",
     select: "Select", selOne: "1 selected", selMany: "{n} selected", combine: "Combine into one PDF", clear: "Clear",
-    ready: "Ready", looking: "Looking for the scanner…", offline: "ScanRevive is not running",
+    ready: "Ready", looking: "Looking for the scanner…", offline: "ScanRevive is closed",
+    close: "Close", closeTitle: "Close ScanRevive and free the scanner", quitBusy: "A scan is in progress. Stop it and close ScanRevive?",
+    closedTitle: "ScanRevive is closed", closedText: "To scan again, open ScanRevive from the Dock or the Applications folder. You can close this tab.",
     warming: "Warming up and calibrating…", scanning: "Scanning… {p}%", previewing: "Previewing… {p}%",
     saved: "Saved {f}", pageAdded: "Page {n} added. Put the next page on the glass.", cancelled: "Cancelled",
     btnPressed: "{b} button pressed on the scanner",
@@ -362,7 +383,9 @@ const I18N = {
     scan: "Scansiona", scanPage: "Scansiona pagina {n}", cancel: "Annulla",
     yourScans: "Le tue scansioni", openFolder: "Apri cartella", noScans: "Qui compariranno le tue scansioni.", savedIn: "Salvate in {d}",
     select: "Seleziona", selOne: "1 selezionata", selMany: "{n} selezionate", combine: "Unisci in un PDF", clear: "Deseleziona",
-    ready: "Pronto", looking: "Cerco lo scanner…", offline: "ScanRevive non è in esecuzione",
+    ready: "Pronto", looking: "Cerco lo scanner…", offline: "ScanRevive è chiuso",
+    close: "Chiudi", closeTitle: "Chiudi ScanRevive e libera lo scanner", quitBusy: "C'è una scansione in corso. Interromperla e chiudere ScanRevive?",
+    closedTitle: "ScanRevive è chiuso", closedText: "Per scansionare di nuovo, apri ScanRevive dal Dock o dalle Applicazioni. Puoi chiudere questa scheda.",
     warming: "Riscaldamento e calibrazione…", scanning: "Scansione… {p}%", previewing: "Anteprima… {p}%",
     saved: "Salvato {f}", pageAdded: "Pagina {n} aggiunta. Metti la pagina successiva sul vetro.", cancelled: "Annullato",
     btnPressed: "Premuto il tasto {b} sullo scanner",
@@ -706,14 +729,24 @@ function setStatus(kind, text) {
   $("#statustext").textContent = text;
 }
 
-let connected = null, seenJob = null, seenEvent = null;
+$("#quit").title = t("closeTitle");
+$("#quit").onclick = async () => {
+  if (busy && !confirm(t("quitBusy"))) return;
+  await api("/api/quit", {}).catch(() => {});
+  $("#closed").hidden = false;
+};
+
+let connected = null, seenJob = null, seenEvent = null, failures = 0;
 async function poll() {
   let s;
   try { s = await api("/api/state"); } catch {
     setStatus("off", t("offline"));
     $("#preview").disabled = $("#scan").disabled = true;
+    if (++failures >= 2) { $("#closed").hidden = false; connected = null; }  // quit from the Dock or the page
     return setTimeout(poll, 2000);
   }
+  failures = 0;
+  $("#closed").hidden = true;
   const j = s.job, running = j.state === "running", pct = Math.round((j.progress || 0) * 100);
   const doing = running && (j.progress ? t(j.kind === "preview" ? "previewing" : "scanning", { p: pct }) : t("warming"));
   if (!s.connected) setStatus("off", s.error || t("looking"));
