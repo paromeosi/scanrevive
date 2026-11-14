@@ -337,14 +337,42 @@ def print_file(path):
     run("lp", "-o", "fit-to-page", path)
 
 
-# name -> (format or None for "last used", follow-up action, description shown in the UI)
-BUTTONS = {
-    "scan": (None, None, "Scan with the current settings"),
-    "file": ("pdf", None, "Scan to PDF"),
-    "pdf": ("pdf", None, "Scan to PDF"),
-    "email": ("jpeg", send_mail, "Scan and attach to a new email"),
-    "copy": ("png", print_file, "Scan and print (photocopy)"),
+# What a button can do: action -> (format, or None for "last used"; follow-up)
+ACTIONS = {
+    "scan": (None, None),
+    "pdf": ("pdf", None),
+    "email": ("jpeg", send_mail),
+    "copy": ("png", print_file),
 }
+# What each button does until the user picks something else on the page. Some drivers only
+# number their buttons ("button 0", "button 1"… in plustek: LiDE 20/25/30), so those start as "scan".
+BUTTON_DEFAULTS = {"scan": "scan", "file": "pdf", "pdf": "pdf", "email": "email", "copy": "copy"}
+
+
+def button_choices():
+    try:
+        saved = json.loads((OUT / ".buttons.json").read_text())
+    except (OSError, ValueError):
+        return {}
+    return saved if isinstance(saved, dict) else {}
+
+
+def button_action(name):
+    action = button_choices().get(name) or BUTTON_DEFAULTS.get(name, "scan")
+    return action if action in ACTIONS else "scan"
+
+
+def set_button(name, action):
+    if not isinstance(name, str) or not 0 < len(name) <= 64:
+        raise ValueError("Unknown button")
+    if action not in ACTIONS:
+        raise ValueError(f"Unknown action: {action}")
+    choices = button_choices()
+    choices[name] = action
+    tmp = OUT / ".buttons.json.tmp"
+    tmp.write_text(json.dumps(choices, indent=1))
+    tmp.replace(OUT / ".buttons.json")  # the button watcher never reads a half-written file
+    return {"name": name, "action": action}
 
 
 # ---------------------------------------------------------------- the scanner
@@ -500,7 +528,7 @@ class Scanner:
                  "advanced": bool(d.cap & CAP_ADVANCED), "hardware": bool(d.cap & CAP_HARD_SELECT)}
             o.update(self._constraint(d))
             if o["hardware"]:  # never read here: reading a button "consumes" the press
-                o["action"] = BUTTONS.get(o["name"], BUTTONS["scan"])[2]
+                o["action"] = button_action(o["name"])
             elif o["active"] and o["count"] == 1 and d.type != BUTTON:
                 o["value"] = self._get(i, d)
             out.append(o)
@@ -663,7 +691,7 @@ class Scanner:
                 self.on_button(name)
 
     def on_button(self, name):
-        fmt, then, _ = BUTTONS.get(name, BUTTONS["scan"])
+        fmt, then = ACTIONS[button_action(name)]
         self.event_id += 1
         self.events = (self.events + [{"id": self.event_id, "button": name}])[-20:]
         try:
@@ -765,6 +793,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/options": lambda: ok({"options": SCANNER.set_options(body["values"])}),
             "/api/device": lambda: ok(SCANNER.select(body["name"])),
             "/api/output": lambda: ok(SCANNER.set_output(body["format"], body.get("quality", 85))),
+            "/api/button": lambda: ok(set_button(body["name"], body["action"])),
             "/api/preview": lambda: ok(SCANNER.start("preview")),
             "/api/scan": lambda: ok(SCANNER.start("scan", body.get("format", "png"), body.get("quality", 85))),
             "/api/cancel": lambda: ok(SCANNER.cancel()),
@@ -990,6 +1019,18 @@ def selftest():
             assert png.close() == (w, len(data) // bpl), name
             assert decode(OUT / f"{name}.png") == (w, len(data) // bpl, want), name
         assert scan_path("rgb.png") and not scan_path("../rgb.png") and not scan_path(".thumbs")
+        # Scanner buttons: named ones keep their job, numbered ones (plustek) scan until the user picks
+        assert [button_action(b) for b in ("copy", "file", "extra", "button 2")] == ["copy", "pdf", "scan", "scan"]
+        set_button("button 2", "email")
+        set_button("copy", "scan")
+        assert [button_action(b) for b in ("button 2", "copy", "email")] == ["email", "scan", "email"]
+        try:
+            set_button("button 0", "format")
+            raise AssertionError("unknown button action accepted")
+        except ValueError:
+            pass
+        (OUT / ".buttons.json").write_text("{broken")
+        assert button_action("button 2") == "scan" and button_action("email") == "email"
         if shutil.which("sips"):
             def check_pdf(path, pages):
                 pdf = path.read_bytes()

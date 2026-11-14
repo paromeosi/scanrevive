@@ -23,7 +23,7 @@ ScanRevive brings them back with a simple web page that runs on your own Mac. Yo
 - **PNG, JPEG, TIFF and PDF** output. PDFs keep the real paper size, so an A4 page stays A4.
 - **Multi-page PDF**: choose **Multi-page PDF**, scan the pages one by one from the page or with the scanner's SCAN button, then press **Finish PDF**. You can also combine scans and PDFs you already have into one document.
 - **A real Mac app**: ScanRevive sits in your Applications folder and Dock with its own icon. Open it when you need it and quit it when you're done. There is no Terminal window.
-- **The scanner's own buttons work** (LiDE 110: COPY, SCAN, PDF, E-MAIL). See [Scanner buttons](#scanner-buttons).
+- **The scanner's own buttons work** (LiDE 110: COPY, SCAN, PDF, E-MAIL), and you choose what each one does. See [Scanner buttons](#scanner-buttons).
 - **Robust**: reconnects by itself when the scanner is unplugged or changes USB address, retries once after a USB hiccup, and a scan is never lost when a conversion fails.
 - **Private**: everything stays on your computer. There is no telemetry and no cloud. By default only your own Mac can open the page.
 - **Tiny**: one Python file and one HTML file. There is no pip, npm or build step.
@@ -77,7 +77,9 @@ From now on, open ScanRevive like any other app, from the Dock, Applications, La
 | Scanner | Status |
 |---|---|
 | Canon CanoScan LiDE 110 | ✅ Tested on macOS 27, Apple M4: preview, crop, all formats, 16-bit, multi-page PDF, SCAN/PDF/E-MAIL buttons |
+| Canon CanoScan LiDE 30 (N1240U) | ✅ Reported working on macOS 27, Apple M2: preview, scan, multi-page PDF, buttons ([report](../../issues/1)) |
 | Other Canon LiDE models (35, 60, 100, 120, 200, 210, 220, …) | Should work: same SANE `genesys` driver |
+| Canon LiDE 20, LiDE 25, N650U, N670U, N1220U, D660U | Should work: same SANE `plustek` driver as the LiDE 30 |
 | Any scanner [supported by SANE](http://www.sane-project.org/sane-supported-devices.html) | Should work: the interface adapts to each scanner's options |
 
 Not sure about yours? With the scanner plugged in, run `scanimage -L`. If it lists your scanner, ScanRevive can use it.
@@ -93,6 +95,10 @@ While ScanRevive is open, the buttons on the scanner work, even with the browser
 | **PDF** | Scans to a PDF |
 | **E-MAIL** | Scans to JPEG and opens a new Mail message with the file attached |
 | **COPY** | Scans and prints on your default printer, like a photocopier |
+
+To change what a button does, open **Scanner buttons** on the page and pick another action next to it. The choice is saved and works even with the page closed.
+
+Some drivers don't name the buttons, only number them. The LiDE 20, 25 and 30 are examples. Their buttons show up as **1**, **2**, **3** and all start as a plain scan. Press a button on the scanner: its row lights up on the page, so you can see which is which. Then choose **Scan and print** for COPY, **Scan and email** for E-MAIL, and so on.
 
 ## Command-line options
 
@@ -234,7 +240,7 @@ Canon, CanoScan and LiDE are trademarks of Canon Inc. This project is not affili
 2. Il browser si apre su http://localhost:8110: premi **Anteprima**, trascina per scegliere l'area e premi **Scansiona**. Le scansioni vengono salvate in `~/Pictures/ScanRevive` (Immagini).
 3. Da quel momento ScanRevive è tra le **Applicazioni**: aprilo come qualsiasi altra app (o trascinalo nel Dock). Non serve tenere aperto il Terminale.
 
-Quando hai finito, chiudilo con ⌘Q o con **Chiudi** in alto nella pagina. I tasti dello scanner (COPY, SCAN, PDF, E-MAIL) funzionano mentre ScanRevive è aperto.
+Quando hai finito, chiudilo con ⌘Q o con **Chiudi** in alto nella pagina. I tasti dello scanner (COPY, SCAN, PDF, E-MAIL) funzionano mentre ScanRevive è aperto. Puoi scegliere cosa fa ciascuno in **Tasti dello scanner**.
 </details>
 
 <details>

@@ -167,6 +167,7 @@
   .hw { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; font-size: 13px; transition: background .3s; }
   .hw kbd { min-width: 64px; padding: 5px 7px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--sunken); color: var(--text-2); font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
   .hw.flash { background: var(--accent-soft); }
+  .hw select { flex: 1; min-width: 0; }
   .muted { color: var(--muted); font-size: 12.5px; }
 
   .summary { color: var(--muted); font-size: 12.5px; text-align: center; }
@@ -351,7 +352,7 @@ const I18N = {
     color: "Color", resolution: "Resolution", other: "Other…", saveAs: "Save as",
     quality: "Quality", smaller: "Smaller file", better: "Better quality",
     more: "More settings", expert: "Show expert options", options: "Options",
-    buttons: "Scanner buttons", buttonsHint: "They work while ScanRevive is open.",
+    buttons: "Scanner buttons", buttonsHint: "They work while ScanRevive is open. Press one to see which row it is, then choose what it does.",
     scan: "Scan", scanPage: "Scan page {n}", cancel: "Cancel",
     yourScans: "Your scans", openFolder: "Open folder", noScans: "Your scans will appear here.", savedIn: "Saved in {d}",
     select: "Select", selOne: "1 selected", selMany: "{n} selected", combine: "Combine into one PDF", clear: "Clear",
@@ -360,7 +361,7 @@ const I18N = {
     closedTitle: "ScanRevive is closed", closedText: "To scan again, open ScanRevive from the Dock or the Applications folder. You can close this tab.",
     warming: "Warming up and calibrating…", scanning: "Scanning… {p}%", previewing: "Previewing… {p}%",
     saved: "Saved {f}", pageAdded: "Page {n} added. Put the next page on the glass.", cancelled: "Cancelled",
-    btnPressed: "{b} button pressed on the scanner",
+    btnPressed: "{b} button pressed on the scanner", btnNumber: "Button {n}", btnNumberPressed: "Button {n} pressed on the scanner",
     docTitle: "Multi-page PDF", docOne: "1 page so far", docMany: "{n} pages so far",
     docEmpty: "Put page 1 on the glass and press Scan, or SCAN on the scanner.",
     docNext: "Put the next page on the glass. When you're done, press Finish PDF.",
@@ -370,8 +371,7 @@ const I18N = {
     f_jpeg: "JPEG", fd_jpeg: "Small files, for photos", f_png: "PNG", fd_png: "Lossless quality", f_tiff: "TIFF", fd_tiff: "For archiving",
     mode_Color: "Color", mode_Gray: "Grayscale", mode_Lineart: "Black & white", mode_Halftone: "Halftone",
     res_low: "Quick, for the screen", res_doc: "Ideal for documents", res_photo: "Ideal for photos", res_high: "Small originals – slow",
-    hw_scan: "Scan with the current settings", hw_file: "Scan to PDF", hw_pdf: "Scan to PDF",
-    hw_email: "Scan and attach to a new email", hw_copy: "Scan and print (photocopy)",
+    act_scan: "Normal scan", act_pdf: "Scan to PDF", act_email: "Scan and email", act_copy: "Scan and print",
   },
   it: {
     preview: "Anteprima", wholeGlass: "Tutto il vetro", dragHint: "Trascina sull'anteprima per scegliere cosa scansionare.",
@@ -379,7 +379,7 @@ const I18N = {
     color: "Colore", resolution: "Risoluzione", other: "Altro…", saveAs: "Salva come",
     quality: "Qualità", smaller: "File più piccolo", better: "Qualità migliore",
     more: "Altre impostazioni", expert: "Mostra opzioni per esperti", options: "Opzioni",
-    buttons: "Tasti dello scanner", buttonsHint: "Funzionano mentre ScanRevive è aperto.",
+    buttons: "Tasti dello scanner", buttonsHint: "Funzionano mentre ScanRevive è aperto. Premine uno per vedere qual è, poi scegli cosa fa.",
     scan: "Scansiona", scanPage: "Scansiona pagina {n}", cancel: "Annulla",
     yourScans: "Le tue scansioni", openFolder: "Apri cartella", noScans: "Qui compariranno le tue scansioni.", savedIn: "Salvate in {d}",
     select: "Seleziona", selOne: "1 selezionata", selMany: "{n} selezionate", combine: "Unisci in un PDF", clear: "Deseleziona",
@@ -388,7 +388,7 @@ const I18N = {
     closedTitle: "ScanRevive è chiuso", closedText: "Per scansionare di nuovo, apri ScanRevive dal Dock o dalle Applicazioni. Puoi chiudere questa scheda.",
     warming: "Riscaldamento e calibrazione…", scanning: "Scansione… {p}%", previewing: "Anteprima… {p}%",
     saved: "Salvato {f}", pageAdded: "Pagina {n} aggiunta. Metti la pagina successiva sul vetro.", cancelled: "Annullato",
-    btnPressed: "Premuto il tasto {b} sullo scanner",
+    btnPressed: "Premuto il tasto {b} sullo scanner", btnNumber: "Tasto {n}", btnNumberPressed: "Premuto il tasto {n} sullo scanner",
     docTitle: "PDF multipagina", docOne: "1 pagina finora", docMany: "{n} pagine finora",
     docEmpty: "Metti la pagina 1 sul vetro e premi Scansiona, oppure SCAN sullo scanner.",
     docNext: "Metti la pagina successiva sul vetro. Quando hai finito, premi Crea PDF.",
@@ -398,8 +398,7 @@ const I18N = {
     f_jpeg: "JPEG", fd_jpeg: "File leggeri, per foto", f_png: "PNG", fd_png: "Qualità senza perdite", f_tiff: "TIFF", fd_tiff: "Per l'archiviazione",
     mode_Color: "Colori", mode_Gray: "Grigi", mode_Lineart: "Bianco e nero", mode_Halftone: "Retino",
     res_low: "Veloce, per lo schermo", res_doc: "Ideale per documenti", res_photo: "Ideale per foto", res_high: "Originali piccoli – lenta",
-    hw_scan: "Scansiona con le impostazioni attuali", hw_file: "Scansiona in PDF", hw_pdf: "Scansiona in PDF",
-    hw_email: "Scansiona e allega a una nuova email", hw_copy: "Scansiona e stampa (fotocopia)",
+    act_scan: "Scansione normale", act_pdf: "Scansiona in PDF", act_email: "Scansiona e invia per email", act_copy: "Scansiona e stampa",
   },
 };
 const LANG = (navigator.language || "en").toLowerCase().split("-")[0];
@@ -540,11 +539,23 @@ function widget(o) {
 }
 
 const KEYCAPS = { scan: "SCAN", file: "PDF", pdf: "PDF", email: "E-MAIL", copy: "COPY" };
+const ACTIONS = ["scan", "pdf", "email", "copy"];
+// Some drivers only number their buttons ("button 0", "button 1"… in plustek): shown as 1, 2, 3.
+const buttonNumber = name => { const m = /^button (\d+)$/.exec(name); return m ? String(+m[1] + 1) : null; };
+const keycap = name => KEYCAPS[name] || buttonNumber(name) || name;
+const buttonName = name => buttonNumber(name) ? t("btnNumber", { n: buttonNumber(name) }) : keycap(name);
+
 function renderButtons() {
   const hw = opts.filter(o => o.hardware && o.type === "bool");
   $("#hwbox").hidden = !hw.length;
-  $("#hw").replaceChildren(...hw.map(o => el("div", { className: "hw", id: "hw-" + o.name },
-    el("kbd", { textContent: KEYCAPS[o.name] || o.title }), el("span", { textContent: S["hw_" + o.name] || o.action }))));
+  $("#hw").replaceChildren(...hw.map(o => {
+    const pick = el("select", { ariaLabel: buttonName(o.name) },
+      ...ACTIONS.map(a => el("option", { value: a, textContent: t("act_" + a), selected: a === o.action })));
+    pick.onchange = () => api("/api/button", { name: o.name, action: pick.value })
+      .then(() => o.action = pick.value)
+      .catch(e => { pick.value = o.action; fail(e); });
+    return el("div", { className: "hw", id: "hw-" + o.name }, el("kbd", { textContent: keycap(o.name), title: o.title }), pick);
+  }));
 }
 
 function renderSummary() {
@@ -785,7 +796,8 @@ async function poll() {
   }
   for (const ev of s.events) {
     if (seenEvent !== null && ev.id > seenEvent) {
-      toast(t("btnPressed", { b: KEYCAPS[ev.button] || ev.button }));
+      const n = buttonNumber(ev.button);
+      toast(n ? t("btnNumberPressed", { n }) : t("btnPressed", { b: keycap(ev.button) }));
       const row = document.getElementById("hw-" + ev.button);
       if (row) { row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1500); }
     }
